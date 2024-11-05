@@ -5,11 +5,13 @@ import its.incom.webdev.rest.model.CreateUserRequest;
 import its.incom.webdev.persistence.model.User;
 import its.incom.webdev.persistence.repository.UserRepository;
 import its.incom.webdev.service.AuthenticationService;
+import its.incom.webdev.service.EmailService;
 import its.incom.webdev.service.HashCalculator;
 import its.incom.webdev.service.UserService;
 import its.incom.webdev.service.exception.ExistingSessionException;
 import its.incom.webdev.service.exception.SessionCreationException;
 import its.incom.webdev.service.exception.WrongUsernameOrPasswordException;
+import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -18,6 +20,9 @@ import jakarta.ws.rs.core.Response;
 
 import java.sql.SQLException;
 import java.util.Optional;
+import java.util.UUID;
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.Mailer;
 
 
 @Path("/auth")
@@ -29,11 +34,15 @@ public class AuthenticationResource {
     private final UserService userService;
     private final HashCalculator hashCalculator;
 
+    @Inject
+    Mailer mailer;
+
     public AuthenticationResource(UserRepository userRepository, AuthenticationService authenticationService, UserService userService, HashCalculator hashCalculator) {
         this.userRepository = userRepository;
         this.authenticationService = authenticationService;
         this.userService = userService;
         this.hashCalculator = hashCalculator;
+
     }
 
     @POST
@@ -106,4 +115,67 @@ public class AuthenticationResource {
                     .build();
         }
     }
+    @Inject
+    EmailService emailService;
+
+
+    // sends a verify email (currently only in the console)
+    // potentially could send to the real email address if fixed
+    @POST
+    @Path("/verify")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response verify(@CookieParam("SESSION_ID") String sessionId) {
+        try {
+            Optional<User> userOpt = authenticationService.getUserBySessionId(sessionId);
+            if (userOpt.isEmpty()) {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("User not authenticated").build();
+            }
+
+            User user = userOpt.get();
+            String email = user.getEmail();
+            String token = UUID.randomUUID().toString();
+            emailService.storeVerificationToken(email, token);
+            emailService.sendVerificationEmail(email, token);
+
+            return Response.ok("{\"message\": \"Verification email sent\"}").build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error sending verification email: " + e.getMessage())
+                    .build();
+        }
+    }
+    @GET
+    @Path("/confirm")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response confirmEmail(@QueryParam("token") String token) {
+        try {
+            Optional<String> emailOpt = emailService.getEmailByVerificationToken(token);
+            if (emailOpt.isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"message\": \"Invalid or expired token\"}")
+                        .build();
+            }
+
+            String email = emailOpt.get();
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (userOpt.isPresent()) {
+                // directly update emailVerified to true for the user
+                userRepository.updateEmailVerified(email, true);
+
+                emailService.deleteVerificationToken(token);
+
+                return Response.ok("{\"message\": \"Email verified successfully\"}").build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("{\"message\": \"User not found\"}")
+                        .build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"message\": \"Error verifying email: " + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
 }
+

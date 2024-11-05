@@ -10,12 +10,21 @@ import its.incom.webdev.service.exception.SessionCreationException;
 import its.incom.webdev.service.exception.WrongUsernameOrPasswordException;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @ApplicationScoped
 public class AuthenticationService {
+
+    @Inject
+    DataSource database;
 
     private final UserRepository userRepository;
     private final UserService userService;
@@ -85,6 +94,37 @@ public class AuthenticationService {
             sessionRepository.deleteSessione(sessionId);
         } catch (SQLException e) {
             throw new RuntimeException("errore durante la cancellazione" + e.getMessage());
+        }
+    }
+    public Optional<User> getUserBySessionId(String sessionId) throws SQLException {
+        // look into email in the session table by session_id
+        String email = sessionRepository.findEmailBySessionId(sessionId);
+        if (email != null) {
+            // email to find user in the user table
+            return userRepository.findByEmail(email);
+        }
+        return Optional.empty();
+    }
+    public void storeVerificationToken(String email, String token) {
+        // token expiry 24hrs
+        LocalDateTime expiryDate = LocalDateTime.now().plusHours(24);
+
+        String query = "INSERT INTO verification_token (email, token, expiry_date) VALUES (?, ?, ?) "
+                + "ON DUPLICATE KEY UPDATE token = ?, expiry_date = ?";
+
+        try (Connection connection = database.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, email);
+                statement.setString(2, token);
+                statement.setTimestamp(3, Timestamp.valueOf(expiryDate));
+                statement.setString(4, token); // For update
+                statement.setTimestamp(5, Timestamp.valueOf(expiryDate)); // For update
+
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to store verification token", e);
         }
     }
 }

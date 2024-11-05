@@ -2,6 +2,7 @@ package its.incom.webdev.persistence.repository;
 
 import its.incom.webdev.persistence.model.User;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 
 import javax.sql.DataSource;
@@ -16,6 +17,9 @@ import java.util.Optional;
 @ApplicationScoped
 public class UserRepository {
 
+
+    @Inject
+    DataSource dataSource;
     private final DataSource database;
 
     public UserRepository(DataSource database) {
@@ -182,6 +186,23 @@ public class UserRepository {
             throw new RuntimeException("Errore durante l'aggiornamento dell'utente", e);
         }
     }
+
+
+    public void updateEmailVerified(String email, boolean emailVerified) {
+        String query = "UPDATE user SET emailVerified = ? WHERE email = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setBoolean(1, emailVerified);
+            statement.setString(2, email);
+
+            int rowsAffected = statement.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
 }

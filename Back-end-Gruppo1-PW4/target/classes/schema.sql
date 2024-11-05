@@ -13,24 +13,31 @@ CREATE TABLE IF NOT EXISTS user
 
 CREATE TABLE IF NOT EXISTS session
 (
-    id    CHAR(36) NOT NULL UNIQUE PRIMARY KEY,
+    id    CHAR(36)     NOT NULL UNIQUE PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
-    FOREIGN KEY (email) REFERENCES user(email)
+    FOREIGN KEY (email) REFERENCES user (email)
 );
 
 CREATE TABLE IF NOT EXISTS product
 (
-    id           INT PRIMARY KEY NOT NULL UNIQUE,
-    productName  VARCHAR(255) NOT NULL,
-    ingredients  VARCHAR(255) NOT NULL,
-    `desc`       VARCHAR(255) NOT NULL,
-    quantity     INT NOT NULL,
-    price        DOUBLE NOT NULL
+    id          INT PRIMARY KEY NOT NULL UNIQUE,
+    productName VARCHAR(255)    NOT NULL,
+    ingredients VARCHAR(255)    NOT NULL,
+    `desc`      VARCHAR(255)    NOT NULL,
+    quantity    INT             NOT NULL,
+    price       DOUBLE          NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS stock
 (
     id         INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    product_id INT NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES product(id)
+    product_id INT             NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES product (id)
+);
+CREATE TABLE IF NOT EXISTS verification_token
+(
+    email       VARCHAR(255) NOT NULL,
+    token       VARCHAR(255) NOT NULL,
+    expiry_date TIMESTAMP    NOT NULL,
+    FOREIGN KEY (email) REFERENCES user (email)
 );

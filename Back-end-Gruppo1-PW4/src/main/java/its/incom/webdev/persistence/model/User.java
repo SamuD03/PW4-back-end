@@ -16,7 +16,9 @@ public class User {
         this.admin = admin;
         this.emailVerified = emailVerified;
     }
-    public User(){}
+
+    public User() {
+    }
 
     public String getEmail() {
         return email;

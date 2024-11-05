@@ -82,4 +82,18 @@ public class SessionRepository {
         }
         return false;
     }
+    public String findEmailBySessionId(String sessionId) throws SQLException {
+        try (Connection connection = database.getConnection()) {
+            String query = "SELECT email FROM session WHERE id = ?";
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, sessionId); // Imposta il sessionId come parametro
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getString("email"); // Ritorna l'email associata
+                    }
+                }
+            }
+        }
+        return null; // Ritorna null se nessuna sessione è trovata
+    }
 }
