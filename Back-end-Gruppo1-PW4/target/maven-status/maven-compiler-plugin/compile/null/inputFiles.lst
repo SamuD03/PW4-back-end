@@ -1,0 +1,15 @@
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\persistence\exception\UserNotHavePermissionException.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\persistence\model\Session.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\persistence\model\User.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\persistence\repository\SessionRepository.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\persistence\repository\UserRepository.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\rest\AuthenticationResource.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\rest\model\CreateUserRequest.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\rest\model\CreateUserResponse.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\rest\UserResource.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\service\AuthenticationService.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\service\exception\ExistingSessionException.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\service\exception\SessionCreationException.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\service\exception\WrongUsernameOrPasswordException.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\service\HashCalculator.java
+C:\Back-end-Gruppo1-PW4\src\main\java\its\incom\webdev\service\UserService.java
