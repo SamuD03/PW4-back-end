@@ -9,14 +9,12 @@ import java.util.List;
 
 @MongoEntity(collection = "order")
 public class Order extends PanacheMongoEntity {
-    @BsonProperty("email_buyer")
     private String emailBuyer;
     private List<Product> content;
     private String comment;
-    @BsonProperty("local_date_time")
     private LocalDateTime dateTime;
 
-    public Order(){}
+    public Order() {}
 
     public String getEmailBuyer() {
         return emailBuyer;
@@ -46,7 +44,7 @@ public class Order extends PanacheMongoEntity {
         return dateTime;
     }
 
-    public void setDateTime(LocalDateTime dateTime) {
+    public void setPickupTime(LocalDateTime dateTime) {
         this.dateTime = dateTime;
     }
 }
