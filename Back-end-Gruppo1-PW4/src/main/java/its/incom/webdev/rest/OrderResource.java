@@ -1,5 +1,6 @@
 package its.incom.webdev.rest;
 
+import its.incom.webdev.service.EmailService;
 import its.incom.webdev.service.OrderService;
 import its.incom.webdev.persistence.repository.SessionRepository;
 import jakarta.inject.Inject;
@@ -20,6 +21,9 @@ public class OrderResource {
     @Inject
     SessionRepository sessionRepository;
 
+    @Inject
+    EmailService emailService;
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -37,7 +41,14 @@ public class OrderResource {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid session or email not found").build();
             }
 
-            // validate e extract
+            // is email verified?
+            if (!emailService.isEmailVerified(emailBuyer)) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity("{\"message\": \"Email not verified. Please verify your email to place an order.\"}")
+                        .build();
+            }
+
+            // validate and extract order data
             if (orderData == null || !orderData.containsKey("content") || !orderData.containsKey("pickup")) {
                 return Response.status(Response.Status.BAD_REQUEST).entity("Missing order details").build();
             }
@@ -63,7 +74,7 @@ public class OrderResource {
                 return Response.status(Response.Status.BAD_REQUEST).entity("Invalid pickup time format").build();
             }
 
-            // call service create order
+            // call service to create order
             boolean success = orderService.bookOrder(emailBuyer, content, pickupTime, comment);
 
             if (success) {

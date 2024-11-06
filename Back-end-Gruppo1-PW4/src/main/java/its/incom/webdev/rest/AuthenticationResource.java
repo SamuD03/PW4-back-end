@@ -54,19 +54,39 @@ public class AuthenticationResource {
         String password = loginRequest.getString("password");
 
         try {
+            Optional<User> userOpt = userRepository.findByEmail(email);
+
+            // user exists?
+            if (userOpt.isEmpty()) {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Wrong username or password").build();
+            }
+
+            User user = userOpt.get();
+
+            // emailverified?
+            if (!emailService.isEmailVerified(email)) {
+                // Log the user's email to the console
+                System.out.println("Email not verified for user: " + email);
+
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("{\"message\": \"Email not verified. Please verify your email to continue.\"}")
+                        .build();
+            }
+
+            // proceed if it is
             String sessionId = authenticationService.login(email, password);
             NewCookie sessionCookie = new NewCookie("SESSION_ID", String.valueOf(sessionId), "/", null, null, NewCookie.DEFAULT_MAX_AGE, false);
 
             return Response.ok().cookie(sessionCookie).entity("Session created: " + sessionId).build();
         } catch (WrongUsernameOrPasswordException e) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Wrong username or password").build();
-        } catch (ExistingSessionException e){
+        } catch (ExistingSessionException e) {
             return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
         } catch (SessionCreationException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error creating session").build();
         }
-
     }
+
 
 
     @POST
