@@ -2,7 +2,6 @@ package its.incom.webdev.persistence.model;
 
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,7 +12,7 @@ public class Order extends PanacheMongoEntity {
     private String comment;
     private LocalDateTime dateTime;
 
-    public Order(){}
+    public Order() {}
 
     public String getEmailBuyer() {
         return emailBuyer;
@@ -43,7 +42,8 @@ public class Order extends PanacheMongoEntity {
         return dateTime;
     }
 
-    public void setDateTime(LocalDateTime dateTime) {
+    public void setPickupTime(LocalDateTime dateTime) {
         this.dateTime = dateTime;
     }
 }
+
