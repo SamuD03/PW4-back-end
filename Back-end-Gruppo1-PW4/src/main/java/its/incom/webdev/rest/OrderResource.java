@@ -2,7 +2,7 @@ package its.incom.webdev.rest;
 
 import its.incom.webdev.service.EmailService;
 import its.incom.webdev.service.OrderService;
-import its.incom.webdev.persistence.repository.SessionRepository;
+import its.incom.webdev.service.SessionService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Cookie;
@@ -19,7 +19,7 @@ public class OrderResource {
     OrderService orderService;
 
     @Inject
-    SessionRepository sessionRepository;
+    SessionService sessionService;
 
     @Inject
     EmailService emailService;
@@ -36,7 +36,7 @@ public class OrderResource {
             String sessionId = sessionCookie.getValue();
 
             // email from session
-            String emailBuyer = sessionRepository.findEmailBySessionId(sessionId);
+            String emailBuyer = sessionService.findEmailBySessionId(sessionId);
             if (emailBuyer == null || emailBuyer.isEmpty()) {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid session or email not found").build();
             }
