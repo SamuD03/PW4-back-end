@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static io.quarkus.mongodb.panache.PanacheMongoEntityBase.persist;
+
 @ApplicationScoped
 public class UserRepository {
 
@@ -100,14 +102,15 @@ public class UserRepository {
     public Optional<User> findByEmail(String email) {
         try {
             try (Connection connection = database.getConnection()) {
-                try (PreparedStatement statement = connection.prepareStatement("SELECT email,pswHash FROM user WHERE email = ?")) {
+                try (PreparedStatement statement = connection.prepareStatement("SELECT email, pswHash, emailVerified FROM user WHERE email = ?")) {
                     statement.setString(1, email);
                     var resultSet = statement.executeQuery();
                     while (resultSet.next()) {
-                        var utente = new User();
-                        utente.setEmail(resultSet.getString("email"));
-                        utente.setPswHash(resultSet.getString("pswHash"));
-                        return Optional.of(utente);
+                        var user = new User();
+                        user.setEmail(resultSet.getString("email"));
+                        user.setPswHash(resultSet.getString("pswHash"));
+                        user.setEmailVerified(resultSet.getBoolean("emailVerified"));
+                        return Optional.of(user);
                     }
                 }
             }
@@ -224,4 +227,8 @@ public class UserRepository {
         return false;
     }
 
+    public User create(User user) {
+        persist(user);
+        return user;
+    }
 }

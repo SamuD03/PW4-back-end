@@ -51,6 +51,7 @@ public class AuthenticationResource {
         String password = loginRequest.getString("password");
 
         try {
+            // Fetch user by email using Panache repository method
             Optional<User> userOpt = userRepository.findByEmail(email);
 
             // Check if user exists
@@ -59,6 +60,9 @@ public class AuthenticationResource {
             }
 
             User user = userOpt.get();
+
+            // Log the whole user object (you can customize this if needed)
+            System.out.println("Fetched User: " + user);
 
             // Check if email is verified
             if (!user.isEmailVerified()) {
@@ -72,7 +76,8 @@ public class AuthenticationResource {
                         .build();
             }
 
-            // Proceed with login if email is verified
+            // proceed with login if email is verified
+            // add the logic for checking the password
             String sessionId = authenticationService.login(email, password);
             NewCookie sessionCookie = new NewCookie("SESSION_ID", sessionId, "/", null, null, NewCookie.DEFAULT_MAX_AGE, false);
 
@@ -86,31 +91,27 @@ public class AuthenticationResource {
         }
     }
 
+
     @POST
     @Path("/register")
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(CreateUserRequest cur) {
-        try {
-            // Controlla se esiste già un utente con la stessa email
-            Optional<User> existingUser = userRepository.findByEmail(cur.getEmail());
-            if (existingUser.isPresent()) {
-                // Se esiste, restituisci un messaggio JSON appropriato
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("{\"message\": \"Utente già presente\"}")
-                        .build();
-            }
-
-            // Se non esiste, crea un nuovo utente
-            User u = userService.ConvertRequestToUtente(cur);
-            User u1 = userRepository.createUtente(u);
-            return Response.status(Response.Status.CREATED)
-                    .entity(u1)
-                    .build();
-        } catch (SQLException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Errore del server, la registrazione non è andata a buon fine")
+        // user exist?
+        Optional<User> existingUser = userRepository.findByEmail(cur.getEmail());
+        if (existingUser.isPresent()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"message\": \"User already exists\"}")
                     .build();
         }
+
+        // if not make new
+        User u = userService.ConvertRequestToUtente(cur);
+        // save it
+        User u1 = userRepository.create(u);
+
+        return Response.status(Response.Status.CREATED)
+                .entity(u1)
+                .build();
     }
 
     @DELETE
@@ -121,12 +122,12 @@ public class AuthenticationResource {
             NewCookie sessionCookie = new NewCookie("SESSION_ID", null, "/", null, null, 0, false);
             return Response.noContent().cookie(sessionCookie).build();
         } catch (RuntimeException e) {
-            // Restituisce 404 se la sessione non esiste
+            // 404
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Session not found: " + e.getMessage())
                     .build();
         } catch (Exception e) {
-            // Restituisce 500 in caso di errore generico
+            // 500
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Error logging out: " + e.getMessage())
                     .build();
@@ -148,7 +149,7 @@ public class AuthenticationResource {
             String email = emailOpt.get();
             Optional<User> userOpt = userRepository.findByEmail(email);
             if (userOpt.isPresent()) {
-                // directly update emailVerified to true for the user
+                // Directly update emailVerified to true for the user
                 userRepository.updateEmailVerified(email, true);
 
                 emailService.deleteVerificationToken(token);
