@@ -1,7 +1,6 @@
 package its.incom.webdev.rest;
 
 import its.incom.webdev.rest.model.CreateUserRequest;
-
 import its.incom.webdev.persistence.model.User;
 import its.incom.webdev.persistence.repository.UserRepository;
 import its.incom.webdev.service.AuthenticationService;
@@ -21,28 +20,26 @@ import jakarta.ws.rs.core.Response;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
-import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
-
 
 @Path("/auth")
 public class AuthenticationResource {
     private final UserRepository userRepository;
     private final AuthenticationService authenticationService;
-
-
     private final UserService userService;
     private final HashCalculator hashCalculator;
+    private final EmailService emailService;
 
     @Inject
     Mailer mailer;
 
-    public AuthenticationResource(UserRepository userRepository, AuthenticationService authenticationService, UserService userService, HashCalculator hashCalculator) {
+    @Inject
+    public AuthenticationResource(UserRepository userRepository, AuthenticationService authenticationService, UserService userService, HashCalculator hashCalculator, EmailService emailService) {
         this.userRepository = userRepository;
         this.authenticationService = authenticationService;
         this.userService = userService;
         this.hashCalculator = hashCalculator;
-
+        this.emailService = emailService;
     }
 
     @POST
@@ -56,28 +53,30 @@ public class AuthenticationResource {
         try {
             Optional<User> userOpt = userRepository.findByEmail(email);
 
-            // user exists?
+            // Check if user exists
             if (userOpt.isEmpty()) {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Wrong username or password").build();
             }
 
             User user = userOpt.get();
 
-            // emailverified?
-            if (!emailService.isEmailVerified(email)) {
-                // Log the user's email to the console
-                System.out.println("Email not verified for user: " + email);
+            // Check if email is verified
+            if (!user.isEmailVerified()) {
+                // Generate and send a verification token
+                String token = UUID.randomUUID().toString();
+                emailService.storeVerificationToken(email, token);
+                emailService.sendVerificationEmail(email, token);
 
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"message\": \"Email not verified. Please verify your email to continue.\"}")
+                        .entity("{\"message\": \"Email not verified. A verification email has been sent.\"}")
                         .build();
             }
 
-            // proceed if it is
+            // Proceed with login if email is verified
             String sessionId = authenticationService.login(email, password);
-            NewCookie sessionCookie = new NewCookie("SESSION_ID", String.valueOf(sessionId), "/", null, null, NewCookie.DEFAULT_MAX_AGE, false);
+            NewCookie sessionCookie = new NewCookie("SESSION_ID", sessionId, "/", null, null, NewCookie.DEFAULT_MAX_AGE, false);
 
-            return Response.ok().cookie(sessionCookie).entity("Session created: " + sessionId).build();
+            return Response.ok().cookie(sessionCookie).entity("{\"message\": \"Login successful\"}").build();
         } catch (WrongUsernameOrPasswordException e) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Wrong username or password").build();
         } catch (ExistingSessionException e) {
@@ -86,8 +85,6 @@ public class AuthenticationResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error creating session").build();
         }
     }
-
-
 
     @POST
     @Path("/register")
@@ -121,7 +118,7 @@ public class AuthenticationResource {
     public Response logout(@CookieParam("SESSION_ID") String sessionId) {
         try {
             authenticationService.delete(sessionId);
-            NewCookie sessionCookie = new NewCookie.Builder("SESSION_ID").path("/").build();
+            NewCookie sessionCookie = new NewCookie("SESSION_ID", null, "/", null, null, 0, false);
             return Response.noContent().cookie(sessionCookie).build();
         } catch (RuntimeException e) {
             // Restituisce 404 se la sessione non esiste
@@ -135,35 +132,7 @@ public class AuthenticationResource {
                     .build();
         }
     }
-    @Inject
-    EmailService emailService;
 
-
-    // sends a verify email (currently only in the console)
-    // potentially could send to the real email address if fixed
-    @POST
-    @Path("/verify")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response verify(@CookieParam("SESSION_ID") String sessionId) {
-        try {
-            Optional<User> userOpt = authenticationService.getUserBySessionId(sessionId);
-            if (userOpt.isEmpty()) {
-                return Response.status(Response.Status.UNAUTHORIZED).entity("User not authenticated").build();
-            }
-
-            User user = userOpt.get();
-            String email = user.getEmail();
-            String token = UUID.randomUUID().toString();
-            emailService.storeVerificationToken(email, token);
-            emailService.sendVerificationEmail(email, token);
-
-            return Response.ok("{\"message\": \"Verification email sent\"}").build();
-        } catch (Exception e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Error sending verification email: " + e.getMessage())
-                    .build();
-        }
-    }
     @GET
     @Path("/confirm")
     @Produces(MediaType.APPLICATION_JSON)
@@ -198,4 +167,3 @@ public class AuthenticationResource {
         }
     }
 }
-
