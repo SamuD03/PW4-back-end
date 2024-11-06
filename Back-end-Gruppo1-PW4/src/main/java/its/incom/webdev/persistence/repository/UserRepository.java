@@ -169,7 +169,7 @@ public class UserRepository {
             throw new RuntimeException("Errore durante la selezione degli utenti", e);
         }
     }
-    public void setAdmin(String email,boolean admin){
+  /*  public void setAdmin(String email,boolean admin){
         String query = "UPDATE user SET admin = ? WHERE email = ?";
 
         try (Connection connection = database.getConnection();
@@ -185,7 +185,7 @@ public class UserRepository {
             e.printStackTrace();
             throw new RuntimeException("Errore durante l'aggiornamento dell'utente", e);
         }
-    }
+    }*/
 
 
     public void updateEmailVerified(String email, boolean emailVerified) {
@@ -203,6 +203,25 @@ public class UserRepository {
         }
     }
 
+    //controllo admin
+    public boolean checkAdmin(String email) throws SQLException {
+        String query = "SELECT admin FROM user WHERE email = ?";
 
+        try (Connection connection = database.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, email);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getBoolean("admin");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Errore nel controllo del ruolo admin", e);
+        }
+
+        return false;
+    }
 
 }

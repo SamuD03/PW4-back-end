@@ -65,9 +65,9 @@ public class UserService {
         return userRepository.getUser();
     }
 
-    public void setRuoloOfUser(String email, boolean admin) {
+    /*public void setRuoloOfUser(String email, boolean admin) {
         userRepository.setAdmin(email, admin);
-    }
+    }*/
 
     public boolean getAdmin(String sessionId) {
         try {
