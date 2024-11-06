@@ -94,6 +94,7 @@ public class AuthenticationResource {
 
     @POST
     @Path("/register")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(CreateUserRequest cur) {
         // user exist?

@@ -228,7 +228,24 @@ public class UserRepository {
     }
 
     public User create(User user) {
-        persist(user);
+        String query = "INSERT INTO user (name, surname, email, pswHash, admin, emailVerified) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setString(1, user.getName());
+            statement.setString(2, user.getSurname());
+            statement.setString(3, user.getEmail());
+            statement.setString(4, user.getPswHash());
+            statement.setBoolean(5, user.isAdmin());
+            statement.setBoolean(6, user.isEmailVerified());
+
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Errore durante la creazione dell'utente", e);
+        }
+
         return user;
     }
+
 }
