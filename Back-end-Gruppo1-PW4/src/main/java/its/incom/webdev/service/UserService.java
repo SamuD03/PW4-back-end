@@ -41,13 +41,13 @@ public class UserService {
     // Metodo pubblico per ottenere un utente dal database tramite il suo ID
     // Restituisce un oggetto CreateUtenteResponse se l'utente esiste, altrimenti lancia un'eccezione
     public CreateUserResponse getUtenteByEmail(String email) throws SQLException {
-        Optional<User> utente = userRepository.getUtenteByEmail(email);
+        // Use null for the phoneNumber parameter if you only want to search by email
+        Optional<User> utente = userRepository.findByEmailOrNumber(email, null);
         if (utente.isPresent()) {
             CreateUserResponse response = convertToResponse(utente.get());
             return response;
         } else {
-            // Gestisci il caso in cui l'utente non esiste
-            // Potrebbe essere lanciando un'eccezione o restituendo un valore predefinito
+            // Handle the case where the user is not found
             throw new SQLException("Utente non trovato con email: " + email);
         }
     }
@@ -89,12 +89,12 @@ public class UserService {
         try {
             // Get the session by ID and retrieve the associated email
             Session session = sessionRepository.getSessionById(sessionId);
-            String email = session.getEmail();
 
-            // Retrieve user information based on the email
-            Optional<User> utente = userRepository.getUtenteByEmail(email);
+            // retrive user based on info
+            Optional<User> utente =   userRepository.findByEmailOrNumber(session.getUser().getEmail(), session.getUser().getNumber());
 
-            // Check if the user is an admin
+
+            // is user admin?
             return utente.isPresent() && utente.get().isAdmin();
         } catch (SQLException e) {
             throw new RuntimeException(e);

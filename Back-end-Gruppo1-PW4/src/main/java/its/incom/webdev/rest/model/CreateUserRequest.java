@@ -8,14 +8,7 @@ public class CreateUserRequest {
     private String password;
     private String number;
 
-    public String getNumber() {
-        return number;
-    }
-
-    public void setNumber(String number) {
-        this.number = number;
-    }
-
+    // Getter and setter for name
     public String getName() {
         return name;
     }
@@ -24,6 +17,7 @@ public class CreateUserRequest {
         this.name = name;
     }
 
+    // Getter and setter for surname
     public String getSurname() {
         return surname;
     }
@@ -32,6 +26,7 @@ public class CreateUserRequest {
         this.surname = surname;
     }
 
+    // Getter and setter for email
     public String getEmail() {
         return email;
     }
@@ -40,6 +35,7 @@ public class CreateUserRequest {
         this.email = email;
     }
 
+    // Getter and setter for password
     public String getPassword() {
         return password;
     }
@@ -48,5 +44,12 @@ public class CreateUserRequest {
         this.password = password;
     }
 
+    // Getter and setter for number
+    public String getNumber() {
+        return number;
+    }
 
+    public void setNumber(String number) {
+        this.number = number;
+    }
 }
