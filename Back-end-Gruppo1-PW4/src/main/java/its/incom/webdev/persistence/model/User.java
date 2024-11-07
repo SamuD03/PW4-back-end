@@ -1,47 +1,60 @@
 package its.incom.webdev.persistence.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "USER")
+@Table(name = "user")
 public class User {
 
     @Id
-    @Column(name = "email")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer id;
+
+    @Column(name = "email", unique = true)
     private String email;
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "pswHash")
+    @Column(name = "pswHash", nullable = false)
     private String pswHash;
 
-    @Column(name = "surname")
+    @Column(name = "surname", nullable = false)
     private String surname;
 
-    @Column(name = "number")
+    @Column(name = "number", unique = true)
     private String number;
 
-    @Column(name = "admin")
+    @Column(name = "admin", nullable = false)
     private boolean admin;
 
-    @Column(name = "emailVerified")
-    private boolean emailVerified;
+    @Column(name = "verified", nullable = false)
+    private boolean verified;
 
-    public User(String email, String name, String pswHash, String surname, String number, boolean admin, boolean emailVerified) {
+    // Default no-argument constructor
+    public User() {
+    }
+
+    // Parameterized constructor
+    public User(Integer id, String email, String name, String pswHash, String surname, String number, boolean admin, boolean verified) {
+        this.id = id;
         this.email = email;
         this.name = name;
         this.pswHash = pswHash;
         this.surname = surname;
         this.number = number;
         this.admin = admin;
-        this.emailVerified = emailVerified;
+        this.verified = verified;
     }
 
-    public User() {
+    // Getters and Setters
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getEmail() {
@@ -77,11 +90,11 @@ public class User {
     }
 
     public String getNumber() {
-        return number;
+        return number; // Ensure this getter is present
     }
 
     public void setNumber(String number) {
-        this.number = number;
+        this.number = number; // Ensure this setter is present
     }
 
     public boolean isAdmin() {
@@ -92,11 +105,11 @@ public class User {
         this.admin = admin;
     }
 
-    public boolean isEmailVerified() {
-        return emailVerified;
+    public boolean isVerified() {
+        return verified;
     }
 
-    public void setEmailVerified(boolean emailVerified) {
-        this.emailVerified = emailVerified;
+    public void setVerified(boolean verified) {
+        this.verified = verified;
     }
 }

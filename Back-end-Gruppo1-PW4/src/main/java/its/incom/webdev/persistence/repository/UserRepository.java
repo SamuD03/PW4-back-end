@@ -14,11 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static io.quarkus.mongodb.panache.PanacheMongoEntityBase.persist;
-
 @ApplicationScoped
 public class UserRepository {
-
 
     @Inject
     DataSource dataSource;
@@ -33,7 +30,7 @@ public class UserRepository {
             throw new BadRequestException("Utente già esistente");
         }
 
-        String query = "INSERT INTO user (name, surname, email, pswHash, admin, emailVerified) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO user (name, surname, email, pswHash, admin, verified) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -41,8 +38,8 @@ public class UserRepository {
             statement.setString(2, user.getSurname());
             statement.setString(3, user.getEmail());
             statement.setString(4, user.getPswHash());
-            statement.setBoolean(5,user.isAdmin());
-            statement.setBoolean(6,user.isEmailVerified());
+            statement.setBoolean(5, user.isAdmin());
+            statement.setBoolean(6, user.isVerified());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -53,10 +50,8 @@ public class UserRepository {
         return user;
     }
 
-
     private boolean checkUtente(String email, String pswHash) {
         String query = "SELECT COUNT(*) FROM user WHERE email = ? AND pswHash = ?";
-
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, email);
@@ -71,26 +66,23 @@ public class UserRepository {
                 }
             }
         } catch (SQLException e) {
-            // Log the exception (use a logging framework or print the stack trace)
             e.printStackTrace();
             throw new RuntimeException("Errore durante il controllo dell'utente", e);
         }
     }
 
-    //controllare se non servono le altre info dell'utente
     public Optional<User> findByEmailPsw(String email, String pswHash) {
-        try {
-            try (Connection connection = database.getConnection()) {
-                try (PreparedStatement statement = connection.prepareStatement("SELECT email,pswHash FROM user WHERE email = ? AND pswHash = ?")) {
-                    statement.setString(1, email);
-                    statement.setString(2, pswHash);
-                    var resultSet = statement.executeQuery();
-                    while (resultSet.next()) {
-                        var utente = new User();
-                        utente.setEmail(resultSet.getString("email"));
-                        utente.setPswHash(resultSet.getString("pswHash"));
-                        return Optional.of(utente);
-                    }
+        String query = "SELECT email, pswHash FROM user WHERE email = ? AND pswHash = ?";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, email);
+            statement.setString(2, pswHash);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    User user = new User();
+                    user.setEmail(resultSet.getString("email"));
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    return Optional.of(user);
                 }
             }
         } catch (SQLException e) {
@@ -100,18 +92,17 @@ public class UserRepository {
     }
 
     public Optional<User> findByEmail(String email) {
-        try {
-            try (Connection connection = database.getConnection()) {
-                try (PreparedStatement statement = connection.prepareStatement("SELECT email, pswHash, emailVerified FROM user WHERE email = ?")) {
-                    statement.setString(1, email);
-                    var resultSet = statement.executeQuery();
-                    while (resultSet.next()) {
-                        var user = new User();
-                        user.setEmail(resultSet.getString("email"));
-                        user.setPswHash(resultSet.getString("pswHash"));
-                        user.setEmailVerified(resultSet.getBoolean("emailVerified"));
-                        return Optional.of(user);
-                    }
+        String query = "SELECT email, pswHash, verified FROM user WHERE email = ?";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, email);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    User user = new User();
+                    user.setEmail(resultSet.getString("email"));
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    user.setVerified(resultSet.getBoolean("verified"));
+                    return Optional.of(user);
                 }
             }
         } catch (SQLException e) {
@@ -122,130 +113,143 @@ public class UserRepository {
 
     public Optional<User> getUtenteByEmail(String email) {
         String query = "SELECT * FROM user WHERE email = ?";
-
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-
             statement.setString(1, email);
-
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    User user = new User();
-                    user.setName(resultSet.getString("nome"));
-                    user.setSurname(resultSet.getString("surname"));
-                    user.setEmail(resultSet.getString("email"));
-                    user.setPswHash(resultSet.getString("pswHash"));
-                    boolean isAdmin = resultSet.getBoolean("admin");
-
-                    return Optional.of(user);
-                } else {
-                    return Optional.empty();
-                }
-            }
-        } catch (SQLException e) {
-            // Log the exception (use a logging framework or print the stack trace)
-            e.printStackTrace();
-            throw new RuntimeException("Errore durante la ricerca dell'utente", e);
-        }
-    }
-    public List<User> getUser(){
-        List<User> list=new ArrayList<>();
-        String query = "SELECT name,surname,email,admin FROM user";
-
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while(resultSet.next()) {
                     User user = new User();
                     user.setName(resultSet.getString("name"));
                     user.setSurname(resultSet.getString("surname"));
                     user.setEmail(resultSet.getString("email"));
-                    //prendo l'esito in stringa la formatto per ENUM di Java
-                    boolean isAdmin = resultSet.getBoolean("admin");
-                    list.add(user);
-                }return list;
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    user.setAdmin(resultSet.getBoolean("admin"));
+                    user.setVerified(resultSet.getBoolean("verified"));
+                    return Optional.of(user);
+                }
             }
         } catch (SQLException e) {
-            // Log the exception (use a logging framework or print the stack trace)
+            e.printStackTrace();
+            throw new RuntimeException("Errore durante la ricerca dell'utente", e);
+        }
+        return Optional.empty();
+    }
+
+    public List<User> getUser() {
+        List<User> list = new ArrayList<>();
+        String query = "SELECT name, surname, email, admin FROM user";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    User user = new User();
+                    user.setName(resultSet.getString("name"));
+                    user.setSurname(resultSet.getString("surname"));
+                    user.setEmail(resultSet.getString("email"));
+                    user.setAdmin(resultSet.getBoolean("admin"));
+                    list.add(user);
+                }
+                return list;
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Errore durante la selezione degli utenti", e);
         }
     }
-  /*  public void setAdmin(String email,boolean admin){
-        String query = "UPDATE user SET admin = ? WHERE email = ?";
 
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setBoolean(1, admin);
-            statement.setString(2, email);
-            int rowsUpdated = statement.executeUpdate();
-            if (rowsUpdated == 0) {
-                //eccezione personalizzata mancante
-                throw new RuntimeException("Nessun utente trovato con l'ID specificato");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Errore durante l'aggiornamento dell'utente", e);
-        }
-    }*/
-
-
-    public void updateEmailVerified(String email, boolean emailVerified) {
-        String query = "UPDATE user SET emailVerified = ? WHERE email = ?";
+    public void updateVerified(String email, boolean verified) {
+        String query = "UPDATE user SET verified = ? WHERE email = ?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setBoolean(1, emailVerified);
+            statement.setBoolean(1, verified);
             statement.setString(2, email);
-
-            int rowsAffected = statement.executeUpdate();
-            System.out.println("Rows affected: " + rowsAffected);
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("Error updating verified status", e);
         }
     }
 
-    //controllo admin
     public boolean checkAdmin(String email) throws SQLException {
         String query = "SELECT admin FROM user WHERE email = ?";
-
-        try (Connection connection = database.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
-                statement.setString(1, email);
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getBoolean("admin");
-                    }
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, email);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getBoolean("admin");
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Errore nel controllo del ruolo admin", e);
         }
-
         return false;
     }
 
+    public Optional<User> findByNumber(String phoneNumber) {
+        String query = "SELECT * FROM user WHERE number = ?";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, phoneNumber);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    User user = new User();
+                    user.setEmail(resultSet.getString("email"));
+                    user.setName(resultSet.getString("name"));
+                    user.setSurname(resultSet.getString("surname"));
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    user.setNumber(resultSet.getString("number"));
+                    user.setAdmin(resultSet.getBoolean("admin"));
+                    user.setVerified(resultSet.getBoolean("verified"));
+                    return Optional.of(user);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding user by phone number", e);
+        }
+        return Optional.empty();
+    }
+
     public User create(User user) {
-        String query = "INSERT INTO user (name, surname, email, pswHash, admin, emailVerified) VALUES (?, ?, ?, ?, ?, ?)";
+        // Updated query to include the number field
+        String query = "INSERT INTO user (name, surname, email, pswHash, number, admin, verified) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-
             statement.setString(1, user.getName());
             statement.setString(2, user.getSurname());
             statement.setString(3, user.getEmail());
             statement.setString(4, user.getPswHash());
-            statement.setBoolean(5, user.isAdmin());
-            statement.setBoolean(6, user.isEmailVerified());
+            statement.setString(5, user.getNumber()); // Added number field
+            statement.setBoolean(6, user.isAdmin());
+            statement.setBoolean(7, user.isVerified());
 
             statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Errore durante la creazione dell'utente", e);
         }
-
         return user;
+    }
+    public void updateVerifiedWithPhone(String phoneNumber, boolean verified) {
+        String query = "UPDATE user SET verified = ? WHERE number = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setBoolean(1, verified);
+            statement.setString(2, phoneNumber);
+
+            int rowsAffected = statement.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected); // Log the number of rows affected
+
+            if (rowsAffected == 0) {
+                throw new RuntimeException("No rows updated. The phone number might be incorrect.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error updating verified status with phone", e);
+        }
     }
 
 }
