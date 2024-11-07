@@ -52,25 +52,16 @@ public class UserService {
         }
     }
 
-    public User ConvertRequestToUtente(CreateUserRequest cur) {
-        User u = new User();
-        u.setEmail(cur.getEmail());
-        u.setName(cur.getName());
-        u.setPswHash(hashCalculator.calculateHash(cur.getPassword()));
-        u.setSurname(cur.getSurname());
-        return u;
-    }
-
-    public List<CreateUserResponse> getUtenti(String sessionId, boolean admin)throws SessionNotFoundException {
+    public List<CreateUserResponse> getUsers(String sessionId, boolean admin)throws SessionNotFoundException {
         try{
             //controllo sessione
-            String email = sessionRepository.findEmailBySessionId(sessionId);
-            if (email == null){
+            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+            if (userId == null){
                 throw new SessionNotFoundException("Please log in");
             }
 
             //controllo admin
-            if(!userRepository.checkAdmin(email)){
+            if(!userRepository.checkAdmin(userId)){
                 throw new SecurityException("Access denied");
             }
         } catch (SQLException e){
@@ -78,7 +69,7 @@ public class UserService {
         }
 
         try {
-            return userRepository.getFilteredUser(admin);
+            return userRepository.getFilteredUsers(admin);
         } catch (SQLException e) {
             throw new RuntimeException(e.getMessage());
         }

@@ -117,7 +117,7 @@ public class AdminResource {
     @Produces
     public Response getUsers(@CookieParam("SESSION_ID") String sessionId, @PathParam("admin") boolean admin){
         try{
-            List<CreateUserResponse> users = userService.getUtenti(sessionId, admin);
+            List<CreateUserResponse> users = userService.getUsers(sessionId, admin);
             return Response.ok(users).build();
         } catch (SessionNotFoundException e) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -129,7 +129,7 @@ public class AdminResource {
                     .build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Errore interno del server, riprova più tardi.")
+                    .entity("Errore interno del server, riprova più tardi." + e.getMessage())
                     .build();
         }
     }

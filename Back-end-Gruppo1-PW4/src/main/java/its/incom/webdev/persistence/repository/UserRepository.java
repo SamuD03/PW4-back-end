@@ -1,6 +1,7 @@
 package its.incom.webdev.persistence.repository;
 
 import its.incom.webdev.persistence.model.User;
+import its.incom.webdev.rest.model.CreateUserResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -134,25 +135,33 @@ public class UserRepository {
         return Optional.empty();
     }
 
-    public List<User> getUser() {
-        List<User> list = new ArrayList<>();
-        String query = "SELECT name, surname, email, admin FROM user";
-        try (Connection connection = database.getConnection();
+    public List<CreateUserResponse> getFilteredUsers(boolean admin)throws SQLException {
+        List<CreateUserResponse> list = new ArrayList<>();
+
+        // Prepare the SQL query with a filter for admin status, but without selecting the 'admin' column
+        String query = "SELECT name, surname, email, number FROM user WHERE admin = ?";
+
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
+
+            // Set the parameter for the admin filter
+            statement.setBoolean(1, admin);
+
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    User user = new User();
+                    CreateUserResponse user = new CreateUserResponse();
                     user.setName(resultSet.getString("name"));
                     user.setSurname(resultSet.getString("surname"));
-                    user.setEmail(resultSet.getString("email"));
-                    user.setAdmin(resultSet.getBoolean("admin"));
+
+                    // Only set email or number if they are not null in the database
+                    user.setEmail(resultSet.getString("email"));  // Can be null
+                    user.setNumber(resultSet.getString("number")); // Can be null
+
+                    // Note: admin is not set here, as it's not selected in the query
                     list.add(user);
                 }
                 return list;
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Errore durante la selezione degli utenti", e);
         }
     }
 
@@ -169,11 +178,11 @@ public class UserRepository {
         }
     }
 
-    public boolean checkAdmin(String email) throws SQLException {
-        String query = "SELECT admin FROM user WHERE email = ?";
-        try (Connection connection = database.getConnection();
+    public boolean checkAdmin(Integer userId) throws SQLException {
+        String query = "SELECT admin FROM user WHERE id = ?";
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, email);
+            statement.setInt(1, userId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return resultSet.getBoolean("admin");

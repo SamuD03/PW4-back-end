@@ -148,4 +148,19 @@ public class SessionRepository {
         }
     }
 
+    public Integer findUserIdBySessionId(String sessionId) throws SQLException {
+        try (Connection connection = database.getConnection()) {
+            String query = "SELECT user_id FROM session WHERE id = ?";
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, sessionId); // Imposta il sessionId come parametro
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return resultSet.getInt("user_id"); // Ritorna l'userId associato
+                    }
+                }
+            }
+        }
+        return null; // Ritorna null se nessuna sessione è trovata
+    }
+
 }

@@ -26,13 +26,13 @@ public class ProductService {
     public Product create(String sessionId, String name, String description, Integer quantity, Double price, String category) throws SessionNotFoundException{
         try{
             //controllo sessione
-            String email = sessionRepository.findEmailBySessionId(sessionId);
-            if (email == null){
+            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+            if (userId == null){
                 throw new SessionNotFoundException("Please log in");
             }
 
             //controllo admin
-            if(!userRepository.checkAdmin(email)){
+            if(!userRepository.checkAdmin(userId)){
                 throw new SecurityException("Access denied");
             }
         } catch (SQLException e){
@@ -50,13 +50,13 @@ public class ProductService {
     public Product update(String sessionId, Long productId, String name, String description, Integer quantity, Double price, String category) throws SessionNotFoundException {
         try{
             //controllo sessione
-            String email = sessionRepository.findEmailBySessionId(sessionId);
-            if (email == null){
+            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+            if (userId == null){
                 throw new SessionNotFoundException("Please log in");
             }
 
             //controllo admin
-            if(!userRepository.checkAdmin(email)){
+            if(!userRepository.checkAdmin(userId)){
                 throw new SecurityException("Access denied");
             }
         } catch (SQLException e){
@@ -86,13 +86,13 @@ public class ProductService {
     public void delete(String sessionId, Long productId) throws SessionNotFoundException{
         try{
             //controllo sessione
-            String email = sessionRepository.findEmailBySessionId(sessionId);
-            if (email == null){
+            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+            if (userId == null){
                 throw new SessionNotFoundException("Please log in");
             }
 
             //controllo admin
-            if(!userRepository.checkAdmin(email)){
+            if(!userRepository.checkAdmin(userId)){
                 throw new SecurityException("Access denied");
             }
         } catch (SQLException e){
