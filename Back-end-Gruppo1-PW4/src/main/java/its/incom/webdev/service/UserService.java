@@ -7,6 +7,7 @@ import its.incom.webdev.persistence.repository.SessionRepository;
 import its.incom.webdev.persistence.repository.UserRepository;
 import its.incom.webdev.rest.model.CreateUserRequest;
 import its.incom.webdev.rest.model.CreateUserResponse;
+import its.incom.webdev.service.exception.SessionNotFoundException;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.sql.SQLException;
@@ -60,14 +61,29 @@ public class UserService {
         return u;
     }
 
-    public List<User> getAllUtenti() {
-        //chiamata select
-        return userRepository.getUser();
-    }
+    public List<CreateUserResponse> getUtenti(String sessionId, boolean admin)throws SessionNotFoundException {
+        try{
+            //controllo sessione
+            String email = sessionRepository.findEmailBySessionId(sessionId);
+            if (email == null){
+                throw new SessionNotFoundException("Please log in");
+            }
 
-    /*public void setRuoloOfUser(String email, boolean admin) {
-        userRepository.setAdmin(email, admin);
-    }*/
+            //controllo admin
+            if(!userRepository.checkAdmin(email)){
+                throw new SecurityException("Access denied");
+            }
+        } catch (SQLException e){
+            throw new RuntimeException(e.getMessage());
+        }
+
+        try {
+            return userRepository.getFilteredUser(admin);
+        } catch (SQLException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+    }
 
     public boolean getAdmin(String sessionId) {
         try {

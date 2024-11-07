@@ -1,6 +1,7 @@
 package its.incom.webdev.persistence.repository;
 
 import its.incom.webdev.persistence.model.User;
+import its.incom.webdev.rest.model.CreateUserResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -33,7 +34,7 @@ public class UserRepository {
             throw new BadRequestException("Utente già esistente");
         }
 
-        String query = "INSERT INTO user (name, surname, email, pswHash, admin, emailVerified) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO user (name, surname, email, pswHash, admin, verified) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -42,7 +43,7 @@ public class UserRepository {
             statement.setString(3, user.getEmail());
             statement.setString(4, user.getPswHash());
             statement.setBoolean(5,user.isAdmin());
-            statement.setBoolean(6,user.isEmailVerified());
+            statement.setBoolean(6,user.isVerified());
 
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -102,14 +103,14 @@ public class UserRepository {
     public Optional<User> findByEmail(String email) {
         try {
             try (Connection connection = database.getConnection()) {
-                try (PreparedStatement statement = connection.prepareStatement("SELECT email, pswHash, emailVerified FROM user WHERE email = ?")) {
+                try (PreparedStatement statement = connection.prepareStatement("SELECT email, pswHash, verified FROM user WHERE email = ?")) {
                     statement.setString(1, email);
                     var resultSet = statement.executeQuery();
                     while (resultSet.next()) {
                         var user = new User();
                         user.setEmail(resultSet.getString("email"));
                         user.setPswHash(resultSet.getString("pswHash"));
-                        user.setEmailVerified(resultSet.getBoolean("emailVerified"));
+                        user.setVerified(resultSet.getBoolean("verified"));
                         return Optional.of(user);
                     }
                 }
@@ -148,30 +149,29 @@ public class UserRepository {
             throw new RuntimeException("Errore durante la ricerca dell'utente", e);
         }
     }
-    public List<User> getUser(){
-        List<User> list=new ArrayList<>();
-        String query = "SELECT name,surname,email,admin FROM user";
+    public List<CreateUserResponse> getFilteredUser(boolean isAdminFilter)throws SQLException{
+        List<CreateUserResponse> list = new ArrayList<>();
+
+        String query = "SELECT name, surname, email, number FROM user WHERE admin = ?";
 
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-
+            statement.setBoolean(1, isAdminFilter);
             try (ResultSet resultSet = statement.executeQuery()) {
-                while(resultSet.next()) {
-                    User user = new User();
+                while (resultSet.next()) {
+                    CreateUserResponse user = new CreateUserResponse();
                     user.setName(resultSet.getString("name"));
                     user.setSurname(resultSet.getString("surname"));
                     user.setEmail(resultSet.getString("email"));
-                    //prendo l'esito in stringa la formatto per ENUM di Java
-                    boolean isAdmin = resultSet.getBoolean("admin");
+                    user.setNumber(resultSet.getString("number"));
+
                     list.add(user);
-                }return list;
+                }
+                return list;
             }
-        } catch (SQLException e) {
-            // Log the exception (use a logging framework or print the stack trace)
-            e.printStackTrace();
-            throw new RuntimeException("Errore durante la selezione degli utenti", e);
         }
     }
+
   /*  public void setAdmin(String email,boolean admin){
         String query = "UPDATE user SET admin = ? WHERE email = ?";
 
@@ -192,7 +192,7 @@ public class UserRepository {
 
 
     public void updateEmailVerified(String email, boolean emailVerified) {
-        String query = "UPDATE user SET emailVerified = ? WHERE email = ?";
+        String query = "UPDATE user SET verified = ? WHERE email = ?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -228,7 +228,7 @@ public class UserRepository {
     }
 
     public User create(User user) {
-        String query = "INSERT INTO user (name, surname, email, pswHash, admin, emailVerified) VALUES (?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO user (name, surname, email, pswHash, admin, verified) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
@@ -237,7 +237,7 @@ public class UserRepository {
             statement.setString(3, user.getEmail());
             statement.setString(4, user.getPswHash());
             statement.setBoolean(5, user.isAdmin());
-            statement.setBoolean(6, user.isEmailVerified());
+            statement.setBoolean(6, user.isVerified());
 
             statement.executeUpdate();
         } catch (SQLException e) {

@@ -13,7 +13,7 @@ import java.util.List;
 
 @ApplicationScoped
 public class ProductRepository {
-    private DataSource dataSource;
+    private final DataSource dataSource;
 
     public ProductRepository(DataSource dataSource){
         this.dataSource = dataSource;

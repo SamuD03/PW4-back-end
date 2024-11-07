@@ -1,22 +1,25 @@
 CREATE DATABASE IF NOT EXISTS LaVie;
 USE LaVie;
 
+-- Create the user table
 CREATE TABLE IF NOT EXISTS user
 (
-    email         VARCHAR(255) PRIMARY KEY NOT NULL UNIQUE,
-    name          VARCHAR(255)             NOT NULL,
-    pswHash       VARCHAR(255)             NOT NULL,
-    surname       VARCHAR(255)             NOT NULL,
-    number        VARCHAR(14),
-    admin         BOOLEAN                  NOT NULL,
-    emailVerified BOOLEAN                  NOT NULL
+    id       INT PRIMARY KEY AUTO_INCREMENT,
+    email    VARCHAR(255) UNIQUE,
+    name     VARCHAR(255) NOT NULL,
+    pswHash  VARCHAR(255) NOT NULL,
+    surname  VARCHAR(255) NOT NULL,
+    number   VARCHAR(14) UNIQUE,
+    admin    BOOLEAN      NOT NULL,
+    verified BOOLEAN      NOT NULL
 );
 
+-- Create the session table
 CREATE TABLE IF NOT EXISTS session
 (
-    id    CHAR(36)     NOT NULL UNIQUE PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
-    FOREIGN KEY (email) REFERENCES user (email)
+    id      CHAR(36) PRIMARY KEY,
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user (id)
 );
 
 -- Create the ingredient table
@@ -37,7 +40,7 @@ CREATE TABLE IF NOT EXISTS product
     category    VARCHAR(255)   NOT NULL
 );
 
--- Create the junction table for the many-to-many relationship
+-- Create the product_ingredient junction table
 CREATE TABLE IF NOT EXISTS product_ingredient
 (
     product_id    INT,
@@ -47,13 +50,15 @@ CREATE TABLE IF NOT EXISTS product_ingredient
     FOREIGN KEY (ingredient_id) REFERENCES ingredient (id)
 );
 
-
+-- Create the stock table
 CREATE TABLE IF NOT EXISTS stock
 (
-    id         INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    product_id INT             NOT NULL,
+    id         INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT NOT NULL,
     FOREIGN KEY (product_id) REFERENCES product (id)
 );
+
+-- Create the verification_token table
 CREATE TABLE IF NOT EXISTS verification_token
 (
     email       VARCHAR(255) NOT NULL,
@@ -62,8 +67,7 @@ CREATE TABLE IF NOT EXISTS verification_token
     FOREIGN KEY (email) REFERENCES user (email)
 );
 
-
--- dati mock
+-- Insert mock data into the ingredient table
 INSERT INTO ingredient (name)
 VALUES ('Farina'),
        ('Zucchero'),
@@ -76,6 +80,7 @@ VALUES ('Farina'),
        ('Fragole'),
        ('Lievito per dolci');
 
+-- Insert mock data into the product table
 INSERT INTO product (productName, description, quantity, price, category)
 VALUES ('Torta al Cioccolato', 'Deliziosa torta al cioccolato ricoperta di ganache', 15, 15.00, 'Torte'),
        ('Cheesecake alle Fragole', 'Cheesecake cremosa con fragole fresche', 10, 20.00, 'Torte'),
@@ -83,6 +88,7 @@ VALUES ('Torta al Cioccolato', 'Deliziosa torta al cioccolato ricoperta di ganac
        ('Torta alla Vaniglia', 'Torta soffice con crema alla vaniglia e panna montata', 12, 18.00, 'Torte'),
        ('Torta di Fragole', 'Torta leggera con fragole fresche e panna', 8, 16.00, 'Torte');
 
+-- Insert data into the product_ingredient junction table
 -- Torta al Cioccolato
 INSERT INTO product_ingredient (product_id, ingredient_id)
 VALUES (1, 1),
@@ -125,4 +131,3 @@ VALUES (5, 1),
        (5, 4),
        (5, 9),
        (5, 10);
-

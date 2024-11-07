@@ -65,7 +65,7 @@ public class AuthenticationResource {
             System.out.println("Fetched User: " + user);
 
             // Check if email is verified
-            if (!user.isEmailVerified()) {
+            if (!user.isVerified()) {
                 // Generate and send a verification token
                 String token = UUID.randomUUID().toString();
                 emailService.storeVerificationToken(email, token);

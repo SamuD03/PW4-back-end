@@ -5,6 +5,15 @@ public class CreateUserResponse {
     private String name;
     private String surname;
     private String email;
+    private String number;
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
+    }
 
     public String getName() {
         return name;
