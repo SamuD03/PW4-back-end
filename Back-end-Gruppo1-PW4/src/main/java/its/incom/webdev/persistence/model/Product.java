@@ -6,12 +6,12 @@ public class Product {
     private String name;
     private String description;
     private Integer quantity;
-    private double price;
+    private Double price;
     private String category;
 
     public Product(){}
 
-    public Product(String name, String description, Integer quantity, double price, String category) {
+    public Product(String name, String description, Integer quantity, Double price, String category) {
         this.name = name;
         this.description = description;
         this.quantity = quantity;
@@ -52,11 +52,11 @@ public class Product {
         this.description = description;
     }
 
-    public double getPrice() {
+    public Double getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Double price) {
         this.price = price;
     }
 

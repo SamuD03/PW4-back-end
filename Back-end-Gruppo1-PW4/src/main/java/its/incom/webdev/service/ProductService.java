@@ -23,7 +23,7 @@ public class ProductService {
         this.userRepository = userRepository;
     }
 
-    public Product create(String sessionId, String name, String description, Integer quantity, double price, String category) throws SessionNotFoundException{
+    public Product create(String sessionId, String name, String description, Integer quantity, Double price, String category) throws SessionNotFoundException{
         try{
             //controllo sessione
             String email = sessionRepository.findEmailBySessionId(sessionId);
@@ -76,17 +76,39 @@ public class ProductService {
             if (price != null) product.setPrice(price);
             if (category != null) product.setCategory(category);
 
-            boolean updated = productRepository.edit(product);
-            if (!updated) {
-                throw new RuntimeException("Failed to update product with ID " + productId);
-            }
-
-            // Restituisci il prodotto aggiornato
-            return product;
+            return productRepository.edit(product);
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         }
-
     }
+
+    public void delete(String sessionId, Long productId) throws SessionNotFoundException{
+        try{
+            //controllo sessione
+            String email = sessionRepository.findEmailBySessionId(sessionId);
+            if (email == null){
+                throw new SessionNotFoundException("Please log in");
+            }
+
+            //controllo admin
+            if(!userRepository.checkAdmin(email)){
+                throw new SecurityException("Access denied");
+            }
+        } catch (SQLException e){
+            throw new RuntimeException(e.getMessage());
+        }
+
+        try {
+            Product product = productRepository.findByProductId(productId);
+            if(product == null){
+                throw new NotFoundException("Product with" + productId + "not found");
+            }
+            productRepository.delete(productId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
 }

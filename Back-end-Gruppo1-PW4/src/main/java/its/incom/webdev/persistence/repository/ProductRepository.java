@@ -19,7 +19,7 @@ public class ProductRepository {
         this.dataSource = dataSource;
     }
 
-    public Product create(String name, String description, Integer quantity, double price, String category) throws SQLException {
+    public Product create(String name, String description, Integer quantity, Double price, String category) throws SQLException {
         try(Connection c = dataSource.getConnection()){
             String query = "INSERT INTO product (productName, description, quantity, price, category) VALUES (?, ?, ?, ?, ?)";
             try(PreparedStatement statement = c.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
@@ -31,15 +31,17 @@ public class ProductRepository {
                 statement.executeUpdate();
                 ResultSet generetedKeys = statement.getGeneratedKeys();
                 if(generetedKeys.next()){
-                    generetedKeys.getLong(1);
-                    return new Product(name, description, quantity, price, category);
+                    Long id = generetedKeys.getLong(1);
+                    Product product = new Product(name, description, quantity, price, category);
+                    product.setId(id);
+                    return product;
                 }
             }
         }
         return null;
     }
 
-    public boolean edit(Product product) throws SQLException{
+    public Product edit(Product product) throws SQLException{
         StringBuilder query = new StringBuilder("UPDATE product SET ");
         List<Object> params = new ArrayList<>();
         String name = product.getName();
@@ -50,23 +52,23 @@ public class ProductRepository {
 
         boolean firstField = true;
 
-        // Verifica se 'name' è stato passato e se sì, aggiunge alla query
-        if(name != null) {
-            if(!firstField) query.append(" ,");
+        // Check if 'name' is provided and add to the query
+        if (name != null) {
+            if (!firstField) query.append(", ");
             query.append("productName = ?");
             params.add(name);
             firstField = false;
         }
 
-        // Verifica se 'description' è stato passato e se sì, aggiunge alla query
-        if(description != null){
+        // Check if 'description' is provided and add to the query
+        if (description != null) {
             if (!firstField) query.append(", ");
             query.append("description = ?");
             params.add(description);
             firstField = false;
         }
 
-        // Verifica se 'quantity' è stato passato e se sì, aggiunge alla query
+        // Check if 'quantity' is provided and add to the query
         if (quantity != null) {
             if (!firstField) query.append(", ");
             query.append("quantity = ?");
@@ -74,36 +76,44 @@ public class ProductRepository {
             firstField = false;
         }
 
-        // Verifica se 'price' è stato passato e se sì, aggiunge alla query
-        if (price != null) {
+        // Check if 'price' is provided and add to the query
+        if (price != null) { // Ensure price is non-zero if mandatory
             if (!firstField) query.append(", ");
             query.append("price = ?");
             params.add(price);
             firstField = false;
         }
 
-        // Verifica se 'category' è stato passato e se sì, aggiunge alla query
+        // Check if 'category' is provided and add to the query
         if (category != null) {
             if (!firstField) query.append(", ");
             query.append("category = ?");
             params.add(category);
         }
 
-        query.append("WHERE id=?");
+        // Ensure at least one field was updated
+        if (params.isEmpty()) {
+            throw new SQLException("Nessun campo da aggiornare");
+        }
+
+        query.append(" WHERE id=?");
         params.add(product.getId());
 
-        System.out.println(query.toString());
-
-        try(Connection c = dataSource.getConnection()){
-            try(PreparedStatement statement = c.prepareStatement(query.toString())){
-                for (int i = 0; i < params.size(); i++){
-                    statement.setObject(i +1, params.get(i));
+        try (Connection c = dataSource.getConnection()) {
+            try (PreparedStatement statement = c.prepareStatement(query.toString())) {
+                for (int i = 0; i < params.size(); i++) {
+                    statement.setObject(i + 1, params.get(i));
                 }
                 int rowsUpdated = statement.executeUpdate();
-                return rowsUpdated > 0;
+                if(rowsUpdated > 0){
+                    return findByProductId(product.getId());
+                } else {
+                    throw new SQLException();
+                }
             }
         }
     }
+
 
     public Product findByProductId(Long id) throws SQLException{
         try(Connection c = dataSource.getConnection()){
@@ -121,6 +131,18 @@ public class ProductRepository {
                     return p;
                 } else {
                     return null;
+                }
+            }
+        }
+    }
+
+    public void delete(Long productId) throws SQLException {
+        try(Connection c = dataSource.getConnection()) {
+            try(PreparedStatement statement = c.prepareStatement("DELETE from product WHERE id = ?")){
+                statement.setLong(1, productId);
+                int affectedRows = statement.executeUpdate();
+                if(affectedRows == 0){
+                    throw new SQLException("Product not delete. 0 affected rows");
                 }
             }
         }

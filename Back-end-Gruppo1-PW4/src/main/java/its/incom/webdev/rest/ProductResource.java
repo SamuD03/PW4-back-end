@@ -72,10 +72,34 @@ public class ProductResource {
                         .build();
             } catch (Exception e) {
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity("Errore interno del server, riprova più tardi.")
+                        .entity(e.getMessage())
                         .build();
             }
         }
 
+    @DELETE
+    @Path("/{id}/delete")
+    public Response delete(@CookieParam("SESSION_ID") String sessionId, @PathParam("id") Long productId){
+        try{
+            productService.delete(sessionId, productId);
+            return Response.ok("Product deleted").build();
 
+        } catch (SessionNotFoundException e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Sessione non valida: " + e.getMessage())
+                    .build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (NotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Prodotto non trovato: " + e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Errore interno del server, riprova più tardi.")
+                    .build();
+        }
+    }
 }
