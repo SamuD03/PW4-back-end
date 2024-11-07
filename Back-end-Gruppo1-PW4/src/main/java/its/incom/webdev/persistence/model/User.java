@@ -2,6 +2,9 @@ package its.incom.webdev.persistence.model;
 
 import jakarta.persistence.*;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 @Entity
 @Table(name = "user")
 public class User {
@@ -48,8 +51,19 @@ public class User {
         this.verified = verified;
     }
 
+    public User(ResultSet resultSet) throws SQLException, SQLException {
+        this.id = resultSet.getInt("id");
+        this.email = resultSet.getString("email");
+        this.name = resultSet.getString("name");
+        this.pswHash = resultSet.getString("pswHash");
+        this.surname = resultSet.getString("surname");
+        this.number = resultSet.getString("number");
+        this.admin = resultSet.getBoolean("admin");
+        this.verified = resultSet.getBoolean("verified");
+    }
+
     // Getters and Setters
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 

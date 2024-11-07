@@ -47,76 +47,87 @@ public class AuthenticationResource {
     public Response login(JsonObject loginRequest) {
         String email = loginRequest.containsKey("email") ? loginRequest.getString("email") : null;
         String password = loginRequest.getString("password");
+        String phoneNumber = loginRequest.containsKey("number") ? loginRequest.getString("number") : null;
 
         try {
-            // fetch user by email or phone number
-            Optional<User> userOpt;
-            if (email != null) {
-                userOpt = userRepository.findByEmail(email);
-            } else {
-                String phoneNumber = loginRequest.getString("number");
-                userOpt = userRepository.findByNumber(phoneNumber);
-            }
-
-            // user exist?
+            // Fetch user by email or phone number
+            Optional<User> userOpt = userRepository.findByEmailOrNumber(email, phoneNumber);
             if (userOpt.isEmpty()) {
-                return Response.status(Response.Status.UNAUTHORIZED).entity("Wrong username or password").build();
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Wrong username or password")
+                        .build();
             }
 
             User user = userOpt.get();
 
-            // verified?
+            // Check if the user is verified
             if (!user.isVerified()) {
+                String token = UUID.randomUUID().toString();
+
                 if (user.getEmail() != null) {
-                    // email verify
-                    String token = UUID.randomUUID().toString();
+                    // Send verification email
                     emailService.storeVerificationToken(user.getEmail(), token);
                     emailService.sendVerificationEmail(user.getEmail(), token);
                     return Response.status(Response.Status.UNAUTHORIZED)
                             .entity("{\"message\": \"Email not verified. A verification email has been sent.\"}")
                             .build();
                 } else if (user.getNumber() != null) {
-                    // phone verify
-                    phoneService.sendOtp(user.getNumber());
+                    // Generate and send OTP to the user's phone number
+                    String otp = phoneService.generateOtp(); // Method to generate a random 6-digit OTP
+                    System.out.println("Sending OTP to phone number: " + user.getNumber());
+                    phoneService.sendOtp(user.getNumber(), "Your OTP is: " + otp); // Pass the OTP message
+
+                    // Store the OTP in a secure place for later validation (e.g., in a cache or database)
+                    phoneService.storeOtpForValidation(user.getNumber(), otp); // Implement this method
+
                     return Response.status(Response.Status.UNAUTHORIZED)
                             .entity("{\"message\": \"Phone not verified. An OTP has been sent to your phone.\"}")
                             .build();
                 } else {
-                    // both null = error
                     return Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"message\": \"User has no email or phone number for verification.\"}")
                             .build();
                 }
             }
 
-            // login if verified
-            String sessionId = authenticationService.login(email != null ? email : user.getNumber(), password);
+            // If verified, proceed to login
+            String sessionId = authenticationService.login(email, password, phoneNumber);
             NewCookie sessionCookie = new NewCookie("SESSION_ID", sessionId, "/", null, null, NewCookie.DEFAULT_MAX_AGE, false);
 
-            return Response.ok().cookie(sessionCookie).entity("{\"message\": \"Login successful\"}").build();
+            return Response.ok()
+                    .cookie(sessionCookie)
+                    .entity("{\"message\": \"Login successful\"}")
+                    .build();
         } catch (WrongUsernameOrPasswordException e) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Wrong username or password").build();
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Wrong username or password")
+                    .build();
         } catch (ExistingSessionException e) {
-            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(e.getMessage())
+                    .build();
         } catch (SessionCreationException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error creating session").build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error creating session")
+                    .build();
         }
     }
+
 
     @POST
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(CreateUserRequest cur) {
-        // alr exist?
-        Optional<User> existingUser = userRepository.findByEmail(cur.getEmail());
+        // Check if user already exists by email or phone number
+        Optional<User> existingUser = userRepository.findByEmailOrNumber(cur.getEmail(), cur.getNumber());
         if (existingUser.isPresent()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("{\"message\": \"User already exists\"}")
                     .build();
         }
 
-        // hash psw
+        // Hash the password
         String hashedPassword = hashCalculator.calculateHash(cur.getPassword());
 
         User u = new User();
@@ -128,15 +139,13 @@ public class AuthenticationResource {
         u.setAdmin(false);
         u.setVerified(false);
 
-        // save user
+        // Save user
         User u1 = userRepository.create(u);
 
         return Response.status(Response.Status.CREATED)
                 .entity(u1)
                 .build();
     }
-
-
 
     @DELETE
     @Path("/logout")
@@ -169,11 +178,13 @@ public class AuthenticationResource {
             }
 
             String email = emailOpt.get();
-            Optional<User> userOpt = userRepository.findByEmail(email);
+            // Use findByEmailOrNumber to search for the user
+            Optional<User> userOpt = userRepository.findByEmailOrNumber(email, null);
             if (userOpt.isPresent()) {
-                // set verified to true
+                // Set verified to true
                 userRepository.updateVerified(email, true);
 
+                // Delete the verification token
                 emailService.deleteVerificationToken(token);
 
                 return Response.ok("{\"message\": \"Email verified successfully\"}").build();
@@ -190,6 +201,7 @@ public class AuthenticationResource {
         }
     }
 
+
     @POST
     @Path("/verify-phone")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -199,7 +211,7 @@ public class AuthenticationResource {
         String otp = verificationRequest.getString("otp");
 
         try {
-            // validate the OTP
+            // Validate the OTP
             boolean isOtpValid = phoneService.validateOtp(phoneNumber, otp);
             if (!isOtpValid) {
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -207,16 +219,17 @@ public class AuthenticationResource {
                         .build();
             }
 
-            // find by phone
-            Optional<User> userOpt = userRepository.findByNumber(phoneNumber);
+            // Find the user by phone number
+            Optional<User> userOpt = userRepository.findByEmailOrNumber(null, phoneNumber);
             if (userOpt.isPresent()) {
-                String email = userOpt.get().getEmail();
+                User user = userOpt.get();
                 System.out.println("Updating verified status for phone number: " + phoneNumber);
 
+                // Update verified status for the phone number
                 userRepository.updateVerifiedWithPhone(phoneNumber, true);
 
-                // did update suceed?
-                Optional<User> updatedUser = userRepository.findByNumber(phoneNumber);
+                // Verify that the update succeeded
+                Optional<User> updatedUser = userRepository.findByEmailOrNumber(null, phoneNumber);
                 if (updatedUser.isPresent() && updatedUser.get().isVerified()) {
                     return Response.ok("{\"message\": \"Phone verified successfully\"}").build();
                 } else {
@@ -236,18 +249,42 @@ public class AuthenticationResource {
                     .build();
         }
     }
-
-
     @POST
-    @Path("/send-otp")
+    @Path("/send-phone-otp")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response sendOtp(JsonObject request) {
+    public Response sendPhoneOtp(JsonObject request) {
         String phoneNumber = request.getString("number");
 
         try {
-            phoneService.sendOtp(phoneNumber);
-            return Response.ok("{\"message\": \"OTP sent successfully\"}").build();
+            // Fetch user by phone number
+            Optional<User> userOpt = userRepository.findNumber(phoneNumber);
+            if (userOpt.isEmpty()) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("{\"message\": \"User not found\"}")
+                        .build();
+            }
+
+            User user = userOpt.get();
+
+            // Check if the user is verified
+            if (!user.isVerified()) {
+                // Generate and send OTP to the user's phone number
+                String otp = phoneService.generateOtp(); // Method to generate a random 6-digit OTP
+                System.out.println("Sending OTP to phone number: " + user.getNumber());
+                phoneService.sendOtp(user.getNumber(), "Your OTP is: " + otp); // Pass the OTP message
+
+                // Store the OTP in a secure place for later validation (e.g., in a cache or database)
+                phoneService.storeOtpForValidation(user.getNumber(), otp); // Implement this method
+
+                return Response.status(Response.Status.OK)
+                        .entity("{\"message\": \"An OTP has been sent to your phone.\"}")
+                        .build();
+            } else {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"message\": \"User is already verified.\"}")
+                        .build();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

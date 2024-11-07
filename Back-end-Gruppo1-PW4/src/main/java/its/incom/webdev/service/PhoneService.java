@@ -1,62 +1,70 @@
 package its.incom.webdev.service;
 
-import com.twilio.Twilio;
-import com.twilio.rest.verify.v2.service.Verification;
-import com.twilio.rest.verify.v2.service.VerificationCheck;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import com.twilio.Twilio;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 @ApplicationScoped
 public class PhoneService {
-
-    // Inject Twilio credentials from application.properties
     @ConfigProperty(name = "twilio.account.sid")
     String accountSid;
 
     @ConfigProperty(name = "twilio.auth.token")
     String authToken;
 
-    @ConfigProperty(name = "twilio.service.sid")
-    String serviceSid;
+    @ConfigProperty(name = "twilio.phone.number")
+    String fromPhoneNumber;
 
-    @ConfigProperty(name = "twilio.default.country.code", defaultValue = "+39")
-    String defaultCountryCode;
+    // A simple in-memory store for OTPs (consider a more robust solution for production)
+    private Map<String, String> otpStorage = new HashMap<>();
 
-    // Initialize Twilio in a @PostConstruct method
-    @PostConstruct
-    public void init() {
+    // Method to send SMS via Twilio
+    public void sendOtp(String toPhoneNumber, String messageBody) {
+        System.out.println("Twilio Account SID: " + accountSid);
+        System.out.println("Twilio Auth Token: " + authToken);
+        System.out.println("Twilio Phone Number: " + fromPhoneNumber);
+
+        // Initialize Twilio (this can be done only once)
         Twilio.init(accountSid, authToken);
-    }
 
-    // Method to send OTP via Twilio's Verify service
-    public void sendOtp(String phoneNumber) {
-        // Ensure phone number is in E.164 format
-        if (!phoneNumber.startsWith("+")) {
-            phoneNumber = defaultCountryCode + phoneNumber; // Add the default country code
-        }
-
-        Verification verification = Verification.creator(
-                serviceSid,  // Twilio Verify Service SID
-                phoneNumber, // Recipient's phone number in E.164 format
-                "sms"        // Method: "sms" or "call"
+        // Create the message
+        Message message = Message.creator(
+                new PhoneNumber(toPhoneNumber), // Destination number
+                new PhoneNumber(fromPhoneNumber), // Twilio number from which to send the SMS
+                messageBody // Content of the message
         ).create();
 
-        System.out.println("OTP sent, SID: " + verification.getSid());
+        // Optionally, print the message ID to track the result
+        System.out.println("SMS sent with SID: " + message.getSid());
     }
 
-    // Method to validate the OTP
     public boolean validateOtp(String phoneNumber, String otp) {
-        if (!phoneNumber.startsWith("+")) {
-            phoneNumber = defaultCountryCode + phoneNumber; // Add the default country code
+        try {
+            // Validate the OTP against the stored value
+            String storedOtp = otpStorage.get(phoneNumber);
+            return storedOtp != null && storedOtp.equals(otp);
+        } catch (Exception e) {
+            System.err.println("Error validating OTP: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
+    }
 
-        VerificationCheck verificationCheck = VerificationCheck.creator(
-                        serviceSid
-                ).setTo(phoneNumber)
-                .setCode(otp)
-                .create();
+    // Method to generate a random 6-digit OTP
+    public String generateOtp() {
+        Random random = new Random();
+        String otp = String.format("%06d", random.nextInt(1000000)); // Generate OTP
+        return otp;
+    }
 
-        return "approved".equals(verificationCheck.getStatus());
+    // Method to store the OTP for validation
+    public void storeOtpForValidation(String phoneNumber, String otp) {
+        otpStorage.put(phoneNumber, otp);
     }
 }

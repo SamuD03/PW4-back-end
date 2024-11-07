@@ -31,7 +31,6 @@ public class AuthenticationService {
     private final HashCalculator hashCalculator;
     private final SessionRepository sessionRepository;
 
-    // Costruttore con iniezione delle dipendenze
     public AuthenticationService(
             UserRepository userRepository,
             UserService userService,
@@ -44,84 +43,96 @@ public class AuthenticationService {
         this.sessionRepository = sessionRepository;
     }
 
-    // Metodo per effettuare il login
-    public String login(String email, String password) throws WrongUsernameOrPasswordException, SessionCreationException, ExistingSessionException {
-        // Calcola l'hash della password
+    public String login(String email, String password, String phoneNumber) throws WrongUsernameOrPasswordException, SessionCreationException, ExistingSessionException {
+        // Calculate the password hash
         String hash = hashCalculator.calculateHash(password);
-        // Cerca l'utente nel database
-        Optional<User> maybePartecipante = userRepository.findByEmailPsw(email, hash);
-        if (maybePartecipante.isPresent()) {
-            User p = maybePartecipante.get();
 
-            try {
-                // Controlla se esiste già una sessione per l'utente
-                if (sessionRepository.sessionExists(p.getEmail())) {
-                    throw new ExistingSessionException("Session already exists for " + p.getEmail());
-                }
+        // attempt to find the user using email or phone number
+        Optional<User> maybeUser = userRepository.findByEmailOrNumber(email, phoneNumber);
 
-                // Crea una nuova sessione per l'utente
-                return sessionRepository.createSession(p.getEmail());
-
-            } catch (SQLException e) {
-                // Gestisce le eccezioni durante la verifica dell'esistenza della sessione
-                throw new SessionCreationException(e);
-            }
-        } else {
-            // Lancia un'eccezione se l'utente non esiste
+        // user found?
+        if (maybeUser.isEmpty()) {
             throw new WrongUsernameOrPasswordException();
         }
-    }
 
+        User user = maybeUser.get();
+
+        // Check if the provided password hash matches the stored hash
+        if (!user.getPswHash().equals(hash)) {
+            throw new WrongUsernameOrPasswordException();
+        }
+
+        try {
+            // session alr exist?
+            if (sessionRepository.sessionExists(String.valueOf(user.getId()))) {
+                throw new ExistingSessionException("Session already exists for user ID: " + user.getId());
+            }
+
+            // create a new session for the user using the user ID
+            return sessionRepository.createSession(user.getId());
+        } catch (SQLException e) {
+            throw new SessionCreationException(e);
+        }
+    }
 
     public CreateUserResponse getProfile(String sessionId) throws SQLException {
-        //1. Recuperare la sessione dal database
-        Session s = sessionRepository.getSessionById(sessionId);
-        //2. Recuperare l'id partecipante della sessione
-        String email = s.getEmail();
-        //3. Recupero il partecipante dal database
-        try {
-            return userService.getUtenteByEmail(email);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        // retrieve the session from the database
+        Session session = sessionRepository.getSessionById(sessionId);
+
+        if (session == null) {
+            throw new RuntimeException("Session not found for the given sessionId");
+        }
+
+        // wse the user ID from the session to find the user
+        Optional<User> maybeUser = userRepository.findByEmailOrNumber(session.getUser().getEmail(), session.getUser().getNumber());
+
+        if (maybeUser.isPresent()) {
+            User user = maybeUser.get();
+            return userService.getUtenteByEmail(user.getEmail());
+        } else {
+            throw new RuntimeException("User not found for the given session");
         }
     }
 
-    public void delete(String sessionId){
-        if(sessionId == null || sessionId.isEmpty()) {
+    public void delete(String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
             throw new RuntimeException("SessionId must be provided");
         }
-        try{
-            sessionRepository.deleteSessione(sessionId);
-        } catch (SQLException e) {
-            throw new RuntimeException("errore durante la cancellazione" + e.getMessage());
-        }
+        sessionRepository.deleteSession(sessionId);
     }
+
     public Optional<User> getUserBySessionId(String sessionId) throws SQLException {
-        // look into email in the session table by session_id
-        String email = sessionRepository.findEmailBySessionId(sessionId);
-        if (email != null) {
-            // email to find user in the user table
-            return userRepository.findByEmail(email);
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new RuntimeException("SessionId must be provided");
         }
-        return Optional.empty();
+
+        // Retrieve the session from the session table using the session ID
+        Session session = sessionRepository.getSessionById(sessionId);
+
+        if (session == null) {
+            throw new RuntimeException("Session not found for the provided sessionId");
+        }
+
+        // Use the user ID from the session to retrieve the user
+        return Optional.of(session.getUser());
     }
+
     public void storeVerificationToken(String email, String token) {
-        // token expiry 24hrs
         LocalDateTime expiryDate = LocalDateTime.now().plusHours(24);
 
         String query = "INSERT INTO verification_token (email, token, expiry_date) VALUES (?, ?, ?) "
                 + "ON DUPLICATE KEY UPDATE token = ?, expiry_date = ?";
 
-        try (Connection connection = database.getConnection()) {
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
-                statement.setString(1, email);
-                statement.setString(2, token);
-                statement.setTimestamp(3, Timestamp.valueOf(expiryDate));
-                statement.setString(4, token); // For update
-                statement.setTimestamp(5, Timestamp.valueOf(expiryDate)); // For update
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
 
-                statement.executeUpdate();
-            }
+            statement.setString(1, email);
+            statement.setString(2, token);
+            statement.setTimestamp(3, Timestamp.valueOf(expiryDate));
+            statement.setString(4, token); // For update
+            statement.setTimestamp(5, Timestamp.valueOf(expiryDate)); // For update
+
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to store verification token", e);

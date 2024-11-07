@@ -91,46 +91,45 @@ public class UserRepository {
         return Optional.empty();
     }
 
-    public Optional<User> findByEmail(String email) {
-        String query = "SELECT email, pswHash, verified FROM user WHERE email = ?";
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, email);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    User user = new User();
-                    user.setEmail(resultSet.getString("email"));
-                    user.setPswHash(resultSet.getString("pswHash"));
-                    user.setVerified(resultSet.getBoolean("verified"));
-                    return Optional.of(user);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return Optional.empty();
-    }
+    public Optional<User> findByEmailOrNumber(String email, String phoneNumber) {
+        String query;
+        boolean isEmailProvided = (email != null && !email.isEmpty());
 
-    public Optional<User> getUtenteByEmail(String email) {
-        String query = "SELECT * FROM user WHERE email = ?";
+        if (isEmailProvided) {
+            query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE email = ?";
+        } else {
+            query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE number = ?";
+        }
+
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, email);
+
+            if (isEmailProvided) {
+                statement.setString(1, email);
+            } else {
+                statement.setString(1, phoneNumber);
+            }
+
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     User user = new User();
+                    user.setId(resultSet.getInt("id"));
                     user.setName(resultSet.getString("name"));
                     user.setSurname(resultSet.getString("surname"));
                     user.setEmail(resultSet.getString("email"));
                     user.setPswHash(resultSet.getString("pswHash"));
+                    user.setNumber(resultSet.getString("number"));
                     user.setAdmin(resultSet.getBoolean("admin"));
                     user.setVerified(resultSet.getBoolean("verified"));
                     return Optional.of(user);
                 }
             }
+            System.out.println("Email: " + email);
+            System.out.println("Phone Number: " + phoneNumber);
+
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException("Errore durante la ricerca dell'utente", e);
+            throw new RuntimeException("Error finding user by email or phone number", e);
         }
         return Optional.empty();
     }
@@ -187,17 +186,67 @@ public class UserRepository {
         return false;
     }
 
-    public Optional<User> findByNumber(String phoneNumber) {
-        String query = "SELECT * FROM user WHERE number = ?";
-        try (Connection connection = database.getConnection();
+    public User create(User user) {
+        String query = "INSERT INTO user (name, surname, email, pswHash, number, admin, verified) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
+
+            statement.setString(1, user.getName());
+            statement.setString(2, user.getSurname());
+            statement.setString(3, user.getEmail());
+            statement.setString(4, user.getPswHash());
+            statement.setString(5, user.getNumber());
+            statement.setBoolean(6, user.isAdmin());
+            statement.setBoolean(7, user.isVerified());
+
+            statement.executeUpdate();
+
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    user.setId(generatedKeys.getInt(1));
+                } else {
+                    throw new SQLException("Failed to retrieve the generated ID for the new user.");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Errore durante la creazione dell'utente", e);
+        }
+        return user;
+    }
+
+    public void updateVerifiedWithPhone(String phoneNumber, boolean verified) {
+        String query = "UPDATE user SET verified = ? WHERE number = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+
+            statement.setBoolean(1, verified);
+            statement.setString(2, phoneNumber);
+
+            int rowsAffected = statement.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected);
+
+            if (rowsAffected == 0) {
+                throw new RuntimeException("No rows updated. The phone number might be incorrect.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error updating verified status with phone", e);
+        }
+    }
+
+    public Optional<User> findNumber(String phoneNumber) {
+        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE number = ?";
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setString(1, phoneNumber);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     User user = new User();
-                    user.setEmail(resultSet.getString("email"));
+                    user.setId(resultSet.getInt("id"));
                     user.setName(resultSet.getString("name"));
                     user.setSurname(resultSet.getString("surname"));
+                    user.setEmail(resultSet.getString("email"));
                     user.setPswHash(resultSet.getString("pswHash"));
                     user.setNumber(resultSet.getString("number"));
                     user.setAdmin(resultSet.getBoolean("admin"));
@@ -211,45 +260,4 @@ public class UserRepository {
         }
         return Optional.empty();
     }
-
-    public User create(User user) {
-        // Updated query to include the number field
-        String query = "INSERT INTO user (name, surname, email, pswHash, number, admin, verified) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, user.getName());
-            statement.setString(2, user.getSurname());
-            statement.setString(3, user.getEmail());
-            statement.setString(4, user.getPswHash());
-            statement.setString(5, user.getNumber()); // Added number field
-            statement.setBoolean(6, user.isAdmin());
-            statement.setBoolean(7, user.isVerified());
-
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Errore durante la creazione dell'utente", e);
-        }
-        return user;
-    }
-    public void updateVerifiedWithPhone(String phoneNumber, boolean verified) {
-        String query = "UPDATE user SET verified = ? WHERE number = ?";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setBoolean(1, verified);
-            statement.setString(2, phoneNumber);
-
-            int rowsAffected = statement.executeUpdate();
-            System.out.println("Rows affected: " + rowsAffected); // Log the number of rows affected
-
-            if (rowsAffected == 0) {
-                throw new RuntimeException("No rows updated. The phone number might be incorrect.");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error updating verified status with phone", e);
-        }
-    }
-
 }
