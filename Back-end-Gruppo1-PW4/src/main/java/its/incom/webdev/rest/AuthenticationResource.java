@@ -91,28 +91,41 @@ public class AuthenticationResource {
             }
 
             // If verified, proceed to login
-            String sessionId = authenticationService.login(email, password, phoneNumber);
-            NewCookie sessionCookie = new NewCookie("SESSION_ID", sessionId, "/", null, null, NewCookie.DEFAULT_MAX_AGE, false);
+            try {
+                // Check if an existing session exists for the user
+                Optional<String> existingSessionId = authenticationService.getSessionIdByEmailOrPhone(email, phoneNumber);
+                String sessionId;
+                if (existingSessionId.isPresent()) {
+                    sessionId = existingSessionId.get();
+                } else {
+                    sessionId = authenticationService.login(email, password, phoneNumber);
+                }
+                NewCookie sessionCookie = new NewCookie("SESSION_ID", sessionId, "/", null, null, NewCookie.DEFAULT_MAX_AGE, false);
 
-            return Response.ok()
-                    .cookie(sessionCookie)
-                    .entity("{\"message\": \"Login successful\"}")
-                    .build();
-        } catch (WrongUsernameOrPasswordException e) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("Wrong username or password")
-                    .build();
-        } catch (ExistingSessionException e) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity(e.getMessage())
-                    .build();
-        } catch (SessionCreationException e) {
+                return Response.ok()
+                        .cookie(sessionCookie)
+                        .entity("{\"message\": \"Login successful\"}")
+                        .build();
+            } catch (WrongUsernameOrPasswordException e) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity("Wrong username or password")
+                        .build();
+            } catch (ExistingSessionException e) {
+                return Response.status(Response.Status.CONFLICT)
+                        .entity(e.getMessage())
+                        .build();
+            } catch (SessionCreationException e) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("Error creating session")
+                        .build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Error creating session")
+                    .entity("Error logging in: " + e.getMessage())
                     .build();
         }
     }
-
 
     @POST
     @Path("/register")
