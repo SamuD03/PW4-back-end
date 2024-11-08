@@ -72,25 +72,26 @@ public class UserRepository {
         }
     }
 
-    public Optional<User> findByEmailPsw(String email, String pswHash) {
-        String query = "SELECT email, pswHash FROM user WHERE email = ? AND pswHash = ?";
+    public Optional<User> findByIdAndPsw(Integer userId, String pswHash) {
+        String query = "SELECT id, pswHash FROM user WHERE id = ? AND pswHash = ?";
         try (Connection connection = database.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, email);
+            statement.setInt(1, userId);
             statement.setString(2, pswHash);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     User user = new User();
-                    user.setEmail(resultSet.getString("email"));
+                    user.setId(resultSet.getInt("id"));
                     user.setPswHash(resultSet.getString("pswHash"));
                     return Optional.of(user);
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error finding user by ID and password", e);
         }
         return Optional.empty();
     }
+
 
     public Optional<User> findByEmailOrNumber(String email, String phoneNumber) {
         String query;
@@ -269,4 +270,22 @@ public class UserRepository {
         }
         return Optional.empty();
     }
+
+    public Optional<String> findPswHashByUserId(Integer userId) {
+        String query = "SELECT pswHash FROM user WHERE id = ?";
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, userId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(resultSet.getString("pswHash"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding password hash for user ID: " + userId, e);
+        }
+        return Optional.empty();
+    }
+
 }

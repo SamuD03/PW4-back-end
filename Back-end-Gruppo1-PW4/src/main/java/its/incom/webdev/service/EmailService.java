@@ -115,14 +115,14 @@ public class EmailService {
             int deletedRows = statement.executeUpdate();
             System.out.println("Deleted expired tokens: " + deletedRows);
         } catch (SQLException e) {
-            e.printStackTrace(); // consider logging for production
+            e.printStackTrace();
         }
     }
-    public boolean isEmailVerified(String email) {
-        String query = "SELECT verified FROM user WHERE email = ?";
+    public boolean isEmailVerified(Integer userId) {
+        String query = "SELECT verified FROM user WHERE id = ?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, email);
+            statement.setInt(1, userId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     return resultSet.getBoolean("verified");

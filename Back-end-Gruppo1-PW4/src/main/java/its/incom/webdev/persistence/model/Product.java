@@ -100,4 +100,15 @@ public class Product extends PanacheEntityBase {
     public void setIngredients(Set<Ingredient> ingredients) {
         this.ingredients = ingredients;
     }
+
+    public void decreaseQuantity(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount to decrease must be greater than zero");
+        }
+        if (this.quantity < amount) {
+            throw new IllegalArgumentException("Insufficient quantity available");
+        }
+        this.quantity -= amount;
+    }
+
 }

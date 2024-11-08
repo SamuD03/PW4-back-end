@@ -7,21 +7,36 @@ import org.bson.codecs.pojo.annotations.BsonProperty;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@MongoEntity(collection = "order")
+@MongoEntity(collection = "orders")
 public class Order extends PanacheMongoEntity {
-    private String emailBuyer;
+    @BsonProperty("id_buyer")
+    private String IdBuyer;
+
+    @BsonProperty("content")
     private List<Product> content;
+
+    @BsonProperty("comment")
     private String comment;
+
+    @BsonProperty("pickup_time")
     private LocalDateTime dateTime;
 
     public Order() {}
 
-    public String getEmailBuyer() {
-        return emailBuyer;
+    public Order(String IdBuyer, List<Product> content, String comment, LocalDateTime dateTime) {
+        this.IdBuyer = IdBuyer;
+        this.content = content;
+        this.comment = comment;
+        this.dateTime = dateTime;
     }
 
-    public void setEmailBuyer(String emailBuyer) {
-        this.emailBuyer = emailBuyer;
+    // Getters and Setters
+    public String getIdBuyer() {
+        return IdBuyer;
+    }
+
+    public void setIdBuyer(String idBuyer) {
+        this.IdBuyer = idBuyer;
     }
 
     public List<Product> getContent() {
@@ -44,7 +59,7 @@ public class Order extends PanacheMongoEntity {
         return dateTime;
     }
 
-    public void setPickupTime(LocalDateTime dateTime) {
+    public void setDateTime(LocalDateTime dateTime) {
         this.dateTime = dateTime;
     }
 }
