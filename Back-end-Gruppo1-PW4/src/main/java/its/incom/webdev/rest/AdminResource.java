@@ -1,8 +1,9 @@
 package its.incom.webdev.rest;
 
 import its.incom.webdev.persistence.model.Product;
-import its.incom.webdev.persistence.model.User;
 import its.incom.webdev.rest.model.CreateUserResponse;
+import its.incom.webdev.rest.model.ProductRequest;
+import its.incom.webdev.rest.model.ProductResponse;
 import its.incom.webdev.service.ProductService;
 import its.incom.webdev.service.UserService;
 import its.incom.webdev.service.exception.SessionNotFoundException;
@@ -10,8 +11,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.net.CacheResponse;
-import java.sql.SQLException;
 import java.util.List;
 
 @Path("/admin")
@@ -29,9 +28,9 @@ public class AdminResource {
     @Path("/product/create")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response create(@CookieParam("SESSION_ID") String sessionId, Product p){
+    public Response create(@CookieParam("SESSION_ID") String sessionId, ProductRequest request){
         try {
-            Product createdProduct = productService.create(sessionId, p.getName(), p.getDescription(), p.getQuantity(), p.getPrice(), p.getCategory());
+            Product createdProduct = productService.create(sessionId, request.getProductName(), request.getDescription(), request.getQuantity(), request.getPrice(), request.getCategory(), request.getIngredients());
 
             return Response.status(Response.Status.CREATED).entity(createdProduct).build();
         } catch (SessionNotFoundException e) {
@@ -46,26 +45,30 @@ public class AdminResource {
         }
     }
 
+
     @PUT
     @Path("/product/{id}/update")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") Long productId, @CookieParam("SESSION_ID") String sessionId, Product updatedProduct){
+    public Response update(@PathParam("id") Long productId, @CookieParam("SESSION_ID") String sessionId, ProductRequest request){
         System.out.println("Id prodotto " + productId);
         try {
             // Chiama il service per aggiornare il prodotto
             Product product = productService.update(
                     sessionId,
                     productId,
-                    updatedProduct.getName(),
-                    updatedProduct.getDescription(),
-                    updatedProduct.getQuantity(),
-                    updatedProduct.getPrice(),
-                    updatedProduct.getCategory()
+                    request.getProductName(),
+                    request.getDescription(),
+                    request.getQuantity(),
+                    request.getPrice(),
+                    request.getCategory(),
+                    request.getIngredients()
             );
 
+            ProductResponse response = new ProductResponse(product);
+
             // Restituisce la risposta con il prodotto aggiornato
-            return Response.ok(product).build();
+            return Response.ok(response).build();
 
         } catch (SessionNotFoundException e) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -133,4 +136,6 @@ public class AdminResource {
                     .build();
         }
     }
+
+
 }
