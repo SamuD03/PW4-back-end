@@ -65,4 +65,53 @@ public class OrderService {
     public List<Order> getOrdersByUserId(String userId) {
         return orderRepository.findOrdersByUserId(String.valueOf(userId));
     }
+
+    public boolean updateOrderStatus(String orderId, String newStatus, boolean isAdmin, String userId) throws IllegalAccessException {
+        try {
+            // fetch the order from the repository
+            Order order = orderRepository.findOrderById(orderId);
+            if (order == null) {
+                throw new IllegalArgumentException("Order not found");
+            }
+
+            // check if the user is an admin
+            if (isAdmin) {
+                // admins can update to any of the valid statuses
+                List<String> validStatuses = List.of("delivered", "cancelled", "pending", "confirmed");
+                if (!validStatuses.contains(newStatus)) {
+                    throw new IllegalArgumentException("Invalid status");
+                }
+            } else {
+                // non-admin users can only cancel pending orders
+                if (!order.getIdBuyer().equals(userId)) {
+                    throw new IllegalAccessException("User not authorized to update this order");
+                }
+                if (!order.getStatus().equals("pending")) {
+                    throw new IllegalArgumentException("Only pending orders can be cancelled");
+                }
+                if (!newStatus.equals("cancelled")) {
+                    throw new IllegalArgumentException("User can only change the status to 'cancelled'");
+                }
+            }
+
+            // update the order status in the repository
+            boolean updated = orderRepository.updateOrderStatus(orderId, newStatus);
+            if (!updated) {
+                throw new RuntimeException("Failed to update order status in the repository");
+            }
+
+            return true; // status updated successfully
+        } catch (IllegalAccessException e) {
+            System.out.println(e.getMessage()); // "User not authorized to update this order"
+            throw e; // re-throw to be caught by OrderResource
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage()); // Specific message for argument issues
+            throw e; // re-throw to be caught by OrderResource
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
+
+

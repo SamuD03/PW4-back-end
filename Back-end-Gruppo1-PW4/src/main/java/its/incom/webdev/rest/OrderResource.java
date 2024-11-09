@@ -168,4 +168,43 @@ public class OrderResource {
                 return false;
         }
     }
+    @PUT
+    @Path("/{orderId}/status")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateOrderStatus(@PathParam("orderId") String orderId, Map<String, String> statusUpdate, @CookieParam("SESSION_ID") Cookie sessionCookie) {
+        try {
+            // validate session cookie
+            if (sessionCookie == null || sessionCookie.getValue().isEmpty()) {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Session ID is missing").build();
+            }
+            String sessionId = sessionCookie.getValue();
+
+            // retrieve user ID and admin status from session
+            Integer userId = sessionService.findUserIdBySessionId(sessionId);
+            if (userId == null) {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid session or user ID not found").build();
+            }
+            boolean isAdmin = sessionService.isAdmin(userId);
+
+            // check if status update is provided
+            String newStatus = statusUpdate.get("status");
+            if (newStatus == null || newStatus.isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity("Status is required").build();
+            }
+
+            // update order status using OrderService
+            boolean updated = orderService.updateOrderStatus(orderId, newStatus, isAdmin, String.valueOf(userId));
+            if (updated) {
+                return Response.ok().entity("Order status updated successfully").build();
+            } else {
+                return Response.status(Response.Status.NOT_FOUND).entity("Order not found").build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"message\": \"Unexpected error: " + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
 }

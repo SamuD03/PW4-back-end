@@ -23,6 +23,11 @@ public class Order extends PanacheMongoEntity {
     @BsonProperty("pickup_time")
     private LocalDateTime dateTime;
 
+    @BsonProperty("status")
+    private String status;
+
+
+
     public Order() {}
 
     public Order(String idBuyer, List<Product> content, String comment, LocalDateTime dateTime) {
@@ -30,6 +35,7 @@ public class Order extends PanacheMongoEntity {
         this.content = content;
         this.comment = comment;
         this.dateTime = dateTime;
+        this.status = status;
     }
 
     // Getters and Setters
@@ -71,5 +77,12 @@ public class Order extends PanacheMongoEntity {
 
     public void setDateTime(LocalDateTime dateTime) {
         this.dateTime = dateTime;
+    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

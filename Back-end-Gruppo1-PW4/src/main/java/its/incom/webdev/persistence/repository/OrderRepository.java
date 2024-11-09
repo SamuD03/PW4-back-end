@@ -107,6 +107,7 @@ public class OrderRepository {
                     .append("content", productDetails)
                     .append("pickup", pickupTime.toString())
                     .append("comment", comment)
+                    .append("status", "pending")
                     .append("created_at", LocalDateTime.now().toString());
 
             // Debug
@@ -210,5 +211,37 @@ public class OrderRepository {
             orders.add(order);
         }
         return orders;
+    }
+
+    public boolean updateOrderStatus(String orderId, String newStatus) {
+        try {
+            ObjectId objectId = new ObjectId(orderId);
+            Document update = new Document("$set", new Document("status", newStatus));
+            Document result = ordersCollection.findOneAndUpdate(new Document("_id", objectId), update);
+            return result != null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public Order findOrderById(String orderId) {
+        try {
+            ObjectId objectId = new ObjectId(orderId);
+            Document document = ordersCollection.find(new Document("_id", objectId)).first();
+            if (document == null) {
+                return null;
+            }
+
+            Order order = new Order();
+            order.setId(objectId);
+            order.setIdBuyer(document.getString("id_buyer"));
+            order.setStatus(document.getString("status"));
+
+            return order;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
