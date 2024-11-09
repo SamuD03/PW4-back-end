@@ -38,13 +38,12 @@ public class OrderResource {
             }
             String sessionId = sessionCookie.getValue();
 
-            // Retrieve the correct user ID from the session
+            // retrieve the user ID from the session using SessionService
             Integer userId = sessionService.findUserIdBySessionId(sessionId);
             if (userId == null) {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid session or user ID not found").build();
             }
 
-            // Use the retrieved userId when creating the order
             String pswHash = sessionService.findPswHashBySessionId(sessionId);
             if (!emailService.isEmailVerified(userId)) {
                 return Response.status(Response.Status.FORBIDDEN)
@@ -52,10 +51,12 @@ public class OrderResource {
                         .build();
             }
 
+            // Check for required order details
             if (orderData == null || !orderData.containsKey("content") || !orderData.containsKey("pickup")) {
                 return Response.status(Response.Status.BAD_REQUEST).entity("Missing order details").build();
             }
 
+            // Parse and validate content and pickup time
             List<Map<String, Object>> content;
             try {
                 content = (List<Map<String, Object>>) orderData.get("content");
@@ -75,13 +76,14 @@ public class OrderResource {
                 return Response.status(Response.Status.BAD_REQUEST).entity("Invalid pickup time format").build();
             }
 
+            // Check if the pickup time is within available slots
             if (!isTimeWithinAvailableSlots(pickupTime)) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity("{\"message\": \"Pickup time is outside of available time slots.\"}")
                         .build();
             }
 
-            // Pass the correct userId to the orderService
+            // Use OrderService to create the order
             boolean success = orderService.bookOrder(userId, pswHash, content, pickupTime, comment);
             if (success) {
                 return Response.ok("{\"message\": \"Order created successfully\"}").build();
