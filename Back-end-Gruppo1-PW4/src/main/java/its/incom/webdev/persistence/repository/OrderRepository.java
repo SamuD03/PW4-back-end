@@ -168,6 +168,7 @@ public class OrderRepository {
                                 product.setPrice(Double.valueOf(item.get("price").toString()));
                                 product.setCategory((String) item.get("category"));
                                 product.setQuantity((Integer) item.get("quantity"));
+                                order.setStatus(document.getString("status"));
                                 products.add(product);
                             }
                         }
@@ -208,6 +209,7 @@ public class OrderRepository {
             order.setContent((List) document.get("content"));
             order.setComment(document.getString("comment"));
             order.setDateTime(LocalDateTime.parse(document.getString("pickup")));
+            order.setStatus(document.getString("status"));
             orders.add(order);
         }
         return orders;
