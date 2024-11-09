@@ -191,4 +191,24 @@ public class OrderRepository {
                 .filter(order -> order != null)
                 .collect(Collectors.toList());
     }
+
+    public List<Order> findAllOrders() {
+        List<Order> orders = new ArrayList<>();
+        for (Document document : ordersCollection.find()) {
+            // convert Document to Order object
+            Order order = new Order();
+
+            ObjectId objectId = document.getObjectId("_id");
+            if (objectId != null) {
+                order.setId(objectId);
+            }
+
+            order.setIdBuyer(document.getString("id_buyer"));
+            order.setContent((List) document.get("content"));
+            order.setComment(document.getString("comment"));
+            order.setDateTime(LocalDateTime.parse(document.getString("pickup")));
+            orders.add(order);
+        }
+        return orders;
+    }
 }

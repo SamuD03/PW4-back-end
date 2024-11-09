@@ -26,9 +26,8 @@ public class OrderService {
     private UserRepository userRepository;
 
     public List<Order> getAllOrders() {
-        return Order.listAll();
+        return orderRepository.findAllOrders();
     }
-
     // Method to book an order
     public boolean bookOrder(Integer userId, String pswHash, List<Map<String, Object>> content, LocalDateTime pickupTime, String comment) {
         try {
