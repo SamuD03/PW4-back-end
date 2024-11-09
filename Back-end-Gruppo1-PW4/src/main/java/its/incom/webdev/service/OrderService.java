@@ -63,4 +63,7 @@ public class OrderService {
             throw new RuntimeException("Error creating order", e);
         }
     }
+    public List<Order> getOrdersByUserId(String userId) {
+        return orderRepository.findOrdersByUserId(String.valueOf(userId));
+    }
 }

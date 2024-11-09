@@ -3,10 +3,13 @@ package its.incom.webdev.persistence.repository;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import its.incom.webdev.persistence.model.Order;
 import its.incom.webdev.persistence.model.Product;
 import org.bson.Document;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.bson.types.ObjectId;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class OrderRepository {
@@ -129,5 +134,61 @@ public class OrderRepository {
                 ))
         ).first();
         return existingOrder != null;
+    }
+
+    public List<Order> findOrdersByUserId(String userId) {
+        return ordersCollection.find(new Document("id_buyer", userId))
+                .map(document -> {
+                    try {
+                        Order order = new Order();
+
+                        // ObjectId and set it as the id
+                        ObjectId objectId = document.getObjectId("_id");
+                        if (objectId != null) {
+                            String objectIdString = objectId.toHexString();
+                            System.out.println("Retrieved ObjectId: " + objectIdString); // Debugging log
+                            order.setId(objectId);
+                        } else {
+                            System.out.println("ObjectId is null");
+                        }
+
+                        order.setIdBuyer(document.getString("id_buyer"));
+
+                        // content from Map to Product objects
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> content = (List<Map<String, Object>>) document.get("content");
+                        List<Product> products = new ArrayList<>();
+                        if (content != null) {
+                            for (Map<String, Object> item : content) {
+                                Product product = new Product();
+                                product.setId((Integer) item.get("id"));
+                                product.setProductName((String) item.get("name"));
+                                product.setDescription((String) item.get("description"));
+                                product.setPrice(Double.valueOf(item.get("price").toString()));
+                                product.setCategory((String) item.get("category"));
+                                product.setQuantity((Integer) item.get("quantity"));
+                                products.add(product);
+                            }
+                        }
+                        order.setContent(products);
+
+                        String pickupTimeStr = document.getString("pickup");
+                        if (pickupTimeStr != null) {
+                            order.setDateTime(LocalDateTime.parse(pickupTimeStr));
+                        }
+
+                        // comment if default = null
+                        order.setComment(document.getString("comment") != null ? document.getString("comment") : "");
+
+                        return order;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+                .into(new ArrayList<>())
+                .stream()
+                .filter(order -> order != null)
+                .collect(Collectors.toList());
     }
 }

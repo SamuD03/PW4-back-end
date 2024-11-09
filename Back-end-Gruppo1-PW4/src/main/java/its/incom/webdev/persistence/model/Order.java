@@ -3,14 +3,16 @@ package its.incom.webdev.persistence.model;
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import org.bson.codecs.pojo.annotations.BsonProperty;
+import org.bson.types.ObjectId;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @MongoEntity(collection = "orders")
 public class Order extends PanacheMongoEntity {
+
     @BsonProperty("id_buyer")
-    private String IdBuyer;
+    private String idBuyer;
 
     @BsonProperty("content")
     private List<Product> content;
@@ -23,20 +25,28 @@ public class Order extends PanacheMongoEntity {
 
     public Order() {}
 
-    public Order(String IdBuyer, List<Product> content, String comment, LocalDateTime dateTime) {
-        this.IdBuyer = IdBuyer;
+    public Order(String idBuyer, List<Product> content, String comment, LocalDateTime dateTime) {
+        this.idBuyer = idBuyer;
         this.content = content;
         this.comment = comment;
         this.dateTime = dateTime;
     }
 
     // Getters and Setters
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
+
     public String getIdBuyer() {
-        return IdBuyer;
+        return idBuyer;
     }
 
     public void setIdBuyer(String idBuyer) {
-        this.IdBuyer = idBuyer;
+        this.idBuyer = idBuyer;
     }
 
     public List<Product> getContent() {

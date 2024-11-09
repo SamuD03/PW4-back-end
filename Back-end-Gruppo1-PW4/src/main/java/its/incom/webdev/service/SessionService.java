@@ -18,12 +18,10 @@ public class SessionService {
         this.userRepository = userRepository;
     }
 
-    public Integer findUserIdBySessionId(String sessionId) {
-        try {
-            return sessionRepository.findUserIdBySessionId(sessionId);
-        } catch (SQLException e) {
-            throw new RuntimeException("Errore durante la ricerca del user_id: " + e.getMessage(), e);
-        }
+    public Integer findUserIdBySessionId(String sessionId) throws SQLException {
+        Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+        System.out.println("Session ID: " + sessionId + ", User ID: " + userId); // Debugging log
+        return userId;
     }
 
     public String findPswHashBySessionId(String sessionId) {
@@ -40,5 +38,9 @@ public class SessionService {
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving password hash: " + e.getMessage(), e);
         }
+    }
+
+    public boolean isAdmin(Integer userId) {
+        return userRepository.isAdmin(userId);
     }
 }

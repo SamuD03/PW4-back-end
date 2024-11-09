@@ -288,4 +288,20 @@ public class UserRepository {
         return Optional.empty();
     }
 
+    public boolean isAdmin(Integer userId) {
+        String query = "SELECT admin FROM user WHERE id = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, userId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getBoolean("admin");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error checking admin status", e);
+        }
+        return false;
+    }
 }
