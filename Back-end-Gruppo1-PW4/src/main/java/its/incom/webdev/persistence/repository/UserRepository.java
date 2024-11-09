@@ -304,4 +304,32 @@ public class UserRepository {
         }
         return false;
     }
+
+    public boolean updateNotificationPreference(Integer userId, boolean notification) {
+        String checkEmailQuery = "SELECT email FROM user WHERE id = ?";
+        String updateQuery = "UPDATE user SET notification = ? WHERE id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement checkStmt = connection.prepareStatement(checkEmailQuery)) {
+            checkStmt.setInt(1, userId);
+
+            try (ResultSet resultSet = checkStmt.executeQuery()) {
+                if (resultSet.next()) {
+                    String email = resultSet.getString("email");
+                    if (email != null && !email.isEmpty()) {
+                        try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
+                            updateStmt.setBoolean(1, notification);
+                            updateStmt.setInt(2, userId);
+                            int rowsAffected = updateStmt.executeUpdate();
+                            return rowsAffected > 0;
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error updating notification preference", e);
+        }
+        return false;
+    }
 }

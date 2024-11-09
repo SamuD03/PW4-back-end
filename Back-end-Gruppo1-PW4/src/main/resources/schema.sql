@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS user
     surname  VARCHAR(255) NOT NULL,
     number   VARCHAR(14) UNIQUE,
     admin    BOOLEAN      NOT NULL,
-    verified BOOLEAN      NOT NULL
+    verified BOOLEAN      NOT NULL,
+    notification  BOOLEAN      NOT NULL
 );
 
 -- Create the session table

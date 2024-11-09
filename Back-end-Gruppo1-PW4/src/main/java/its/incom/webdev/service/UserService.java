@@ -91,4 +91,13 @@ public class UserService {
             throw new RuntimeException(e);
         }
     }
+
+    public boolean updateNotificationPreference(String sessionId, boolean notification) throws Exception {
+        Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+        if (userId == null) {
+            throw new Exception("Invalid session ID");
+        }
+
+        return userRepository.updateNotificationPreference(userId, notification);
+    }
 }
