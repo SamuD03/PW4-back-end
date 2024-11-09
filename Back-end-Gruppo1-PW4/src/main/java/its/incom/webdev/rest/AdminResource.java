@@ -1,12 +1,17 @@
 package its.incom.webdev.rest;
 
+import its.incom.webdev.persistence.model.Ingredient;
 import its.incom.webdev.persistence.model.Product;
 import its.incom.webdev.rest.model.CreateUserResponse;
+import its.incom.webdev.rest.model.IngredientRequest;
 import its.incom.webdev.rest.model.ProductRequest;
 import its.incom.webdev.rest.model.ProductResponse;
+import its.incom.webdev.service.IngredientService;
 import its.incom.webdev.service.ProductService;
 import its.incom.webdev.service.UserService;
 import its.incom.webdev.service.exception.SessionNotFoundException;
+import jakarta.inject.Inject;
+import jakarta.persistence.PersistenceException;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -16,13 +21,15 @@ import java.util.List;
 @Path("/admin")
 public class AdminResource {
 
-    private final ProductService productService;
     private final UserService userService;
 
-    public AdminResource(ProductService productService, UserService userService){
-        this.productService = productService;
+    public AdminResource(UserService userService){
         this.userService = userService;
     }
+    @Inject
+    IngredientService ingredientService;
+    @Inject
+    ProductService productService;
 
     @POST
     @Path("/product/create")
@@ -39,6 +46,8 @@ public class AdminResource {
         } catch (SecurityException e) {
             // Risposta 403 Forbidden se l'utente non ha i permessi di amministratore
             return Response.status(Response.Status.FORBIDDEN).entity("Accesso negato: " + e.getMessage()).build();
+        } catch (IllegalArgumentException e){
+            return Response.status(Response.Status.BAD_REQUEST).entity("Bad request: " + e.getMessage()).build();
         } catch (Exception e) {
             // Risposta 500 Internal Server Error per altri tipi di errore
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Errore nel server: " + e.getMessage()).build();
@@ -137,5 +146,71 @@ public class AdminResource {
         }
     }
 
+    @POST
+    @Path("/ingredient/create")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response create(@CookieParam("SESSION_ID") String sessionId, IngredientRequest request){
+        try{
+            Ingredient created = ingredientService.create(sessionId, request.getName());
+            return Response.status(Response.Status.CREATED).entity(created).build();
+        } catch (SessionNotFoundException e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Sessione non valida: " + e.getMessage())
+                    .build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (PersistenceException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+        }
+    }
 
+    @PUT
+    @Path("/ingredient/{id}/update")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response update(@CookieParam("SESSION_ID") String sessionId, @PathParam("id") Integer ingredientId, IngredientRequest request){
+        try{
+            Ingredient updated = ingredientService.update(sessionId, ingredientId, request.getName());
+            return Response.status(Response.Status.CREATED).entity(updated).build();
+        } catch (SessionNotFoundException e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Invalid session: " + e.getMessage())
+                    .build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (PersistenceException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Database error: " + e.getMessage())
+                    .build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(e.getMessage())
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/ingredient")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllIngredients(@CookieParam("SESSION_ID") String sessionId){
+        try{
+            List<Ingredient> ingredients = ingredientService.getAll(sessionId);
+            return Response.ok(ingredients).build();
+        } catch (SessionNotFoundException e){
+            return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
+        } catch (SecurityException e){
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (PersistenceException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Unexpected error: " + e.getMessage()).build();
+        }
+    }
 }
