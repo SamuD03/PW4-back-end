@@ -21,7 +21,6 @@ public class ProductRepository implements PanacheRepository<Product> {
     @Inject
     IngredientRepository ingredientRepository;
 
-    @Transactional
     public Product edit(Product product, Set<String> ingredientNames) {
         // Update the product details
         product.persist(); // Aggiorna il prodotto
@@ -47,8 +46,6 @@ public class ProductRepository implements PanacheRepository<Product> {
     public Optional<Product> findByProductId(Long id) {
         return find("SELECT p FROM Product p LEFT JOIN FETCH p.ingredients WHERE p.id = ?1", id).firstResultOptional(); // Metodo Panache per trovare un prodotto per ID
     }
-
-    @Transactional
     public void deleteProduct(Long productId) {
         // Step 1: Remove the associations in the junction table (product_ingredient)
         getEntityManager()
@@ -58,5 +55,15 @@ public class ProductRepository implements PanacheRepository<Product> {
 
         // Step 2: Delete the product itself
         deleteById(productId);
+    }
+
+    public List<Product> getAll() {
+        List<Product> products = find("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.ingredients").list();
+        System.out.println(products);
+        return products;
+    }
+
+    public boolean existsByName(String name){
+        return find("productName", name).firstResult() != null;
     }
 }

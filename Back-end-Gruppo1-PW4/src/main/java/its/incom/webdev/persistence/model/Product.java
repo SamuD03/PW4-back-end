@@ -26,7 +26,7 @@ public class Product extends PanacheEntityBase {
     @Column(name = "category", nullable = false)
     private String category;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "product_ingredient",
             joinColumns = @JoinColumn(name = "product_id"),

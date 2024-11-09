@@ -60,6 +60,11 @@ public class ProductService {
         }
 
         try {
+            // Verifica se un prodotto con lo stesso nome esiste già
+            if (productRepository.existsByName(name)) {
+                throw new IllegalArgumentException("Product with name '" + name + "' already exists");
+            }
+
             // Create a new product
             Product product = new Product(name, description, quantity, price, category);
 
@@ -161,5 +166,23 @@ public class ProductService {
 
         // Delete the product and its associations with ingredients
         productRepository.deleteProduct(productId);
+    }
+
+    public List<Product> getAll(String sessionId) throws SessionNotFoundException{
+        try {
+            // Session check
+            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+            if (userId == null) {
+                throw new SessionNotFoundException("Please log in");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+        try{
+            return productRepository.getAll();
+        } catch (PersistenceException e){
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }
