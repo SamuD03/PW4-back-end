@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -242,6 +243,51 @@ public class OrderRepository {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public Optional<Order> findById(String orderId) {
+        try {
+            ObjectId objectId = new ObjectId(orderId);
+            Document document = ordersCollection.find(new Document("_id", objectId)).first();
+            if (document == null) {
+                return Optional.empty();
+            }
+
+            Order order = new Order();
+            order.setId(objectId);
+            order.setIdBuyer(document.getString("id_buyer"));
+            order.setStatus(document.getString("status"));
+
+            // Convert content from Document to List<Product>
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> content = (List<Map<String, Object>>) document.get("content");
+            List<Product> products = new ArrayList<>();
+            if (content != null) {
+                for (Map<String, Object> item : content) {
+                    Product product = new Product();
+                    product.setId((Integer) item.get("id"));
+                    product.setProductName((String) item.get("name"));
+                    product.setDescription((String) item.get("description"));
+                    product.setPrice(Double.valueOf(item.get("price").toString()));
+                    product.setCategory((String) item.get("category"));
+                    product.setQuantity((Integer) item.get("quantity"));
+                    products.add(product);
+                }
+            }
+            order.setContent(products);
+
+            String pickupTimeStr = document.getString("pickup");
+            if (pickupTimeStr != null) {
+                order.setDateTime(LocalDateTime.parse(pickupTimeStr));
+            }
+
+            order.setComment(document.getString("comment") != null ? document.getString("comment") : "");
+
+            return Optional.of(order);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
         }
     }
 }

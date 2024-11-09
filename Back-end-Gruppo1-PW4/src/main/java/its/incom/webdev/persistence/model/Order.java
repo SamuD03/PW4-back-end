@@ -6,6 +6,7 @@ import org.bson.codecs.pojo.annotations.BsonProperty;
 import org.bson.types.ObjectId;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @MongoEntity(collection = "orders")
@@ -25,8 +26,6 @@ public class Order extends PanacheMongoEntity {
 
     @BsonProperty("status")
     private String status;
-
-
 
     public Order() {}
 
@@ -78,11 +77,22 @@ public class Order extends PanacheMongoEntity {
     public void setDateTime(LocalDateTime dateTime) {
         this.dateTime = dateTime;
     }
+
     public String getStatus() {
         return status;
     }
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public int getBuyerId() {
+        return Integer.parseInt(idBuyer);
+    }
+
+    public String getPickupDate() {
+        // Format the LocalDateTime object to a readable string
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return dateTime.format(formatter);
     }
 }

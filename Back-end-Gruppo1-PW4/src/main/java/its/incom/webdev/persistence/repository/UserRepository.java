@@ -332,4 +332,56 @@ public class UserRepository {
         }
         return false;
     }
+
+    public Optional<User> findById(int buyerId) {
+        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE id = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, buyerId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    User user = new User();
+                    user.setId(resultSet.getInt("id"));
+                    user.setName(resultSet.getString("name"));
+                    user.setSurname(resultSet.getString("surname"));
+                    user.setEmail(resultSet.getString("email"));
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    user.setNumber(resultSet.getString("number"));
+                    user.setAdmin(resultSet.getBoolean("admin"));
+                    user.setVerified(resultSet.getBoolean("verified"));
+                    return Optional.of(user);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding user by ID", e);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<User> findByEmail(String email) {
+        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE email = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, email);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    User user = new User();
+                    user.setId(resultSet.getInt("id"));
+                    user.setName(resultSet.getString("name"));
+                    user.setSurname(resultSet.getString("surname"));
+                    user.setEmail(resultSet.getString("email"));
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    user.setNumber(resultSet.getString("number"));
+                    user.setAdmin(resultSet.getBoolean("admin"));
+                    user.setVerified(resultSet.getBoolean("verified"));
+                    return Optional.of(user);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding user by email", e);
+        }
+        return Optional.empty();
+    }
 }

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS user
 -- Create the session table
 CREATE TABLE IF NOT EXISTS session
 (
-    id      CHAR(36) PRIMARY KEY,
+    id      VARCHAR(36) PRIMARY KEY,
     user_id INT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user (id)
 );
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS product
     productName VARCHAR(255)   NOT NULL UNIQUE,
     description TEXT           NOT NULL,
     quantity    INT            NOT NULL,
-    price       DECIMAL(10, 2) NOT NULL,
+    price       DOUBLE NOT NULL,
     category    VARCHAR(255)   NOT NULL
 );
 
