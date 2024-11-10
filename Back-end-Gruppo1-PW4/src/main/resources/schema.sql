@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS user
     number   VARCHAR(14) UNIQUE,
     admin    BOOLEAN      NOT NULL,
     verified BOOLEAN      NOT NULL,
-    notification  BOOLEAN      NOT NULL
+    notification  BOOLEAN      NOT NULL DEFAULT false
 );
 
 -- Create the session table
