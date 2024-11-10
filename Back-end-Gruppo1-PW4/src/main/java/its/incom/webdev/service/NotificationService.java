@@ -112,7 +112,7 @@ public void printPickupTimesWithin24Hours() {
         }
     }
 
-    // ff no orders are found, print a message
+    // no orders are found, print a message
     if (!foundOrders) {
         System.out.println("No orders found within the next 24 hours.");
     }
@@ -136,16 +136,23 @@ public void printPickupTimesWithin24Hours() {
                 Optional<User> optionalUser = userRepository.findById(buyerId);
                 if (optionalUser.isPresent()) {
                     User user = optionalUser.get();
-                    String userName = user.getName() + " " + user.getSurname();
 
-                    // call the method to send the email
-                    sendPickupReminderEmail(user.getEmail(), order.getId().toString(), order.getDateTime(), userName);
+                    // check if the user has notifications enabled
+                    if (user.isNotification()) {
+                        String userName = user.getName() + " " + user.getSurname();
+
+                        // call the method to send the email
+                        sendPickupReminderEmail(user.getEmail(), order.getId().toString(), order.getDateTime(), userName);
+                    } else {
+                        System.out.println("User with ID: " + buyerId + " has notifications disabled.");
+                    }
                 } else {
                     System.out.println("User not found in MySQL with ID: " + buyerId);
                 }
             }
         }
     }
+
     public void sendPickupReminderEmail(String to, String orderId, LocalDateTime pickupTime, String userName) {
         // use the user's full name provided as an argument
         if (userName == null || userName.isEmpty()) {

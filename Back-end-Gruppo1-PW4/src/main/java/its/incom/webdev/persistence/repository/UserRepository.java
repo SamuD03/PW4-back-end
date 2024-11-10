@@ -334,7 +334,7 @@ public class UserRepository {
     }
 
     public Optional<User> findById(int buyerId) {
-        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE id = ?";
+        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified, notification FROM user WHERE id = ?";
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, buyerId);
@@ -349,6 +349,7 @@ public class UserRepository {
                     user.setNumber(resultSet.getString("number"));
                     user.setAdmin(resultSet.getBoolean("admin"));
                     user.setVerified(resultSet.getBoolean("verified"));
+                    user.setNotification(resultSet.getBoolean("notification")); // Add this line
                     return Optional.of(user);
                 }
             }
