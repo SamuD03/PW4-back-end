@@ -406,4 +406,38 @@ public class UserRepository {
         }
         return admins;
     }
+
+    public boolean deleteUserById(int userId) {
+        String query = "DELETE FROM user WHERE id = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, userId);
+            int rowsAffected = statement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error deleting user", e);
+        }
+    }
+
+    public boolean updateUser(User user) {
+        String query = "UPDATE user SET name = ?, surname = ?, email = ?, pswHash = ?, number = ?, admin = ?, verified = ?, notification = ? WHERE id = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, user.getName());
+            statement.setString(2, user.getSurname());
+            statement.setString(3, user.getEmail());
+            statement.setString(4, user.getPswHash());
+            statement.setString(5, user.getNumber());
+            statement.setBoolean(6, user.isAdmin());
+            statement.setBoolean(7, user.isVerified());
+            statement.setBoolean(8, user.isNotification());
+            statement.setInt(9, user.getId());
+            int rowsAffected = statement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error updating user", e);
+        }
+    }
 }
