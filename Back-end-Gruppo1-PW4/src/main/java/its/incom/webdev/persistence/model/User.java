@@ -1,7 +1,6 @@
 package its.incom.webdev.persistence.model;
 
 import jakarta.persistence.*;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -35,12 +34,15 @@ public class User {
     @Column(name = "verified", nullable = false)
     private boolean verified;
 
+    @Column(name = "notification", nullable = false)
+    private boolean notification;
+
     // Default no-argument constructor
     public User() {
     }
 
     // Parameterized constructor
-    public User(Integer id, String email, String name, String pswHash, String surname, String number, boolean admin, boolean verified) {
+    public User(Integer id, String email, String name, String pswHash, String surname, String number, boolean admin, boolean verified, boolean notification) {
         this.id = id;
         this.email = email;
         this.name = name;
@@ -49,9 +51,11 @@ public class User {
         this.number = number;
         this.admin = admin;
         this.verified = verified;
+        this.notification = notification;
     }
 
-    public User(ResultSet resultSet) throws SQLException, SQLException {
+    // Constructor to initialize from ResultSet
+    public User(ResultSet resultSet) throws SQLException {
         this.id = resultSet.getInt("id");
         this.email = resultSet.getString("email");
         this.name = resultSet.getString("name");
@@ -60,10 +64,11 @@ public class User {
         this.number = resultSet.getString("number");
         this.admin = resultSet.getBoolean("admin");
         this.verified = resultSet.getBoolean("verified");
+        this.notification = resultSet.getBoolean("notification"); // New field
     }
 
     // Getters and Setters
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
@@ -104,11 +109,11 @@ public class User {
     }
 
     public String getNumber() {
-        return number; // Ensure this getter is present
+        return number;
     }
 
     public void setNumber(String number) {
-        this.number = number; // Ensure this setter is present
+        this.number = number;
     }
 
     public boolean isAdmin() {
@@ -125,5 +130,13 @@ public class User {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public boolean isNotification() {
+        return notification;
+    }
+
+    public void setNotification(boolean notification) {
+        this.notification = notification;
     }
 }

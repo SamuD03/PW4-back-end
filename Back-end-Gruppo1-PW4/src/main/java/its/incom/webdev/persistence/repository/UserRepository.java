@@ -304,4 +304,106 @@ public class UserRepository {
         }
         return false;
     }
+
+    public boolean updateNotificationPreference(Integer userId, boolean notification) {
+        String checkEmailQuery = "SELECT email FROM user WHERE id = ?";
+        String updateQuery = "UPDATE user SET notification = ? WHERE id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement checkStmt = connection.prepareStatement(checkEmailQuery)) {
+            checkStmt.setInt(1, userId);
+
+            try (ResultSet resultSet = checkStmt.executeQuery()) {
+                if (resultSet.next()) {
+                    String email = resultSet.getString("email");
+                    if (email != null && !email.isEmpty()) {
+                        try (PreparedStatement updateStmt = connection.prepareStatement(updateQuery)) {
+                            updateStmt.setBoolean(1, notification);
+                            updateStmt.setInt(2, userId);
+                            int rowsAffected = updateStmt.executeUpdate();
+                            return rowsAffected > 0;
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error updating notification preference", e);
+        }
+        return false;
+    }
+
+    public Optional<User> findById(int buyerId) {
+        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified, notification FROM user WHERE id = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, buyerId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    User user = new User();
+                    user.setId(resultSet.getInt("id"));
+                    user.setName(resultSet.getString("name"));
+                    user.setSurname(resultSet.getString("surname"));
+                    user.setEmail(resultSet.getString("email"));
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    user.setNumber(resultSet.getString("number"));
+                    user.setAdmin(resultSet.getBoolean("admin"));
+                    user.setVerified(resultSet.getBoolean("verified"));
+                    user.setNotification(resultSet.getBoolean("notification")); // Add this line
+                    return Optional.of(user);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding user by ID", e);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<User> findByEmail(String email) {
+        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE email = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, email);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    User user = new User();
+                    user.setId(resultSet.getInt("id"));
+                    user.setName(resultSet.getString("name"));
+                    user.setSurname(resultSet.getString("surname"));
+                    user.setEmail(resultSet.getString("email"));
+                    user.setPswHash(resultSet.getString("pswHash"));
+                    user.setNumber(resultSet.getString("number"));
+                    user.setAdmin(resultSet.getBoolean("admin"));
+                    user.setVerified(resultSet.getBoolean("verified"));
+                    return Optional.of(user);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error finding user by email", e);
+        }
+        return Optional.empty();
+    }
+
+    public List<User> getAllAdmins() {
+        String query = "SELECT id, name, surname, email FROM user WHERE admin = true";
+        List<User> admins = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                User admin = new User();
+                admin.setId(resultSet.getInt("id"));
+                admin.setName(resultSet.getString("name"));
+                admin.setSurname(resultSet.getString("surname"));
+                admin.setEmail(resultSet.getString("email"));
+                admins.add(admin);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error retrieving admin users", e);
+        }
+        return admins;
+    }
 }

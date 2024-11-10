@@ -43,4 +43,12 @@ public class SessionService {
     public boolean isAdmin(Integer userId) {
         return userRepository.isAdmin(userId);
     }
+
+    public String getUserNameById(Integer userId) {
+        // Use the existing `findById` method to get the user's name
+        return userRepository.findById(userId)
+                .map(user -> user.getName() + " " + user.getSurname())
+                .orElseThrow(() -> new RuntimeException("User not found for ID: " + userId));
+    }
+
 }
