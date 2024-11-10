@@ -385,4 +385,25 @@ public class UserRepository {
         }
         return Optional.empty();
     }
+
+    public List<User> getAllAdmins() {
+        String query = "SELECT id, name, surname, email FROM user WHERE admin = true";
+        List<User> admins = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                User admin = new User();
+                admin.setId(resultSet.getInt("id"));
+                admin.setName(resultSet.getString("name"));
+                admin.setSurname(resultSet.getString("surname"));
+                admin.setEmail(resultSet.getString("email"));
+                admins.add(admin);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error retrieving admin users", e);
+        }
+        return admins;
+    }
 }

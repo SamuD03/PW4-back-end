@@ -2,6 +2,7 @@ package its.incom.webdev.rest;
 
 import its.incom.webdev.persistence.model.Order;
 import its.incom.webdev.service.EmailService;
+import its.incom.webdev.service.NotificationService;
 import its.incom.webdev.service.OrderService;
 import its.incom.webdev.service.SessionService;
 import jakarta.inject.Inject;
@@ -27,18 +28,19 @@ public class OrderResource {
     @Inject
     EmailService emailService;
 
+    @Inject
+    NotificationService notificationService;
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createOrder(Map<String, Object> orderData, @CookieParam("SESSION_ID") Cookie sessionCookie) {
         try {
-            // Validate session cookie
             if (sessionCookie == null || sessionCookie.getValue().isEmpty()) {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Session ID is missing").build();
             }
             String sessionId = sessionCookie.getValue();
 
-            // retrieve the user ID from the session using SessionService
             Integer userId = sessionService.findUserIdBySessionId(sessionId);
             if (userId == null) {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid session or user ID not found").build();
@@ -51,12 +53,10 @@ public class OrderResource {
                         .build();
             }
 
-            // Check for required order details
             if (orderData == null || !orderData.containsKey("content") || !orderData.containsKey("pickup")) {
                 return Response.status(Response.Status.BAD_REQUEST).entity("Missing order details").build();
             }
 
-            // Parse and validate content and pickup time
             List<Map<String, Object>> content;
             try {
                 content = (List<Map<String, Object>>) orderData.get("content");
@@ -76,16 +76,22 @@ public class OrderResource {
                 return Response.status(Response.Status.BAD_REQUEST).entity("Invalid pickup time format").build();
             }
 
-            // Check if the pickup time is within available slots
             if (!isTimeWithinAvailableSlots(pickupTime)) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity("{\"message\": \"Pickup time is outside of available time slots.\"}")
                         .build();
             }
 
-            // Use OrderService to create the order
             boolean success = orderService.bookOrder(userId, pswHash, content, pickupTime, comment);
             if (success) {
+                String buyerName = sessionService.getUserNameById(userId);
+
+                // fetch the newly created order
+                List<Order> userOrders = orderService.getOrdersByUserId(String.valueOf(userId));
+                Order latestOrder = userOrders.get(userOrders.size() - 1); // Assuming the last order is the newly created one
+
+                notificationService.notifyAdminsAboutNewOrder(latestOrder, buyerName);
+
                 return Response.ok("{\"message\": \"Order created successfully\"}").build();
             } else {
                 return Response.status(Response.Status.CONFLICT).entity("{\"message\": \"Time slot is already booked\"}").build();
