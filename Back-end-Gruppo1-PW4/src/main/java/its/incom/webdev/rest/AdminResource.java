@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.util.List;
 
 @Path("/admin")
@@ -226,6 +227,29 @@ public class AdminResource {
         try{
             File file = dataExportService.exportProductsToExcel(sessionId);
             return Response.ok(file).header("Content-Disposition", "attachment; filename=\"Products.xlsx\"").build();
+        } catch (SessionNotFoundException e){
+            return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
+        } catch (SecurityException e){
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (ExportDataException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error exporting data: " + e.getMessage())
+                    .build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Unexpected server error: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/order/{date}/export")
+    @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public Response orderToExcel(@CookieParam("SESSION_ID") String sessionId, @PathParam("date") String date){
+        try{
+            LocalDate localDate = LocalDate.parse(date);
+            File file = dataExportService.exportOrdersToExcel(sessionId, localDate);
+            return Response.ok(file).header("Content-Disposition", "attachment; filename=\"Orders_" + date + ".xlsx\"").build();
         } catch (SessionNotFoundException e){
             return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
         } catch (SecurityException e){

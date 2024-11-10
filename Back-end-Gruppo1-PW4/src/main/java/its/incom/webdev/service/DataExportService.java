@@ -1,6 +1,8 @@
 package its.incom.webdev.service;
 
+import its.incom.webdev.persistence.model.Order;
 import its.incom.webdev.persistence.model.Product;
+import its.incom.webdev.persistence.repository.OrderRepository;
 import its.incom.webdev.persistence.repository.ProductRepository;
 import its.incom.webdev.persistence.repository.SessionRepository;
 import its.incom.webdev.persistence.repository.UserRepository;
@@ -13,6 +15,7 @@ import jakarta.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
 @ApplicationScoped
@@ -25,6 +28,8 @@ public class DataExportService {
     SessionRepository sessionRepository;
     @Inject
     ProductRepository productRepository;
+    @Inject
+    OrderRepository orderRepository;
 
     public DataExportService(DataExport dataExport){
         this.dataExport = dataExport;
@@ -60,4 +65,35 @@ public class DataExportService {
             throw new ExportDataException("Error exporting Excel file: " + e.getMessage());
         }
     }
+
+    public File exportOrdersToExcel(String sessionId, LocalDate date) throws SessionNotFoundException, ExportDataException{
+        try{
+            // Validate session and check admin privileges
+            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+            if (userId == null) {
+                throw new SessionNotFoundException("Please log in");
+            }
+            if (!userRepository.checkAdmin(userId)) {
+                throw new SecurityException("Access denied");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error validating session: " + e.getMessage());
+        }
+
+        try{
+            String filePath = "Orders_" + date.toString() + ".xlsx";
+            List<Order> orders = orderRepository.findOrdersByDate(date);
+            dataExport.exportOrdersToExcel(orders, filePath, date);
+
+            File csvFile = new File(filePath);
+            if(csvFile.exists()){
+                return csvFile;
+            } else{
+                throw new RuntimeException("Failed to generate Excel file");
+            }
+        } catch (IOException e) {
+            throw new ExportDataException("Error exporting Excel file: " + e.getMessage());
+        }
+    }
+
 }
