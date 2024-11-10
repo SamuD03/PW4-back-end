@@ -1,70 +1,107 @@
-# corsi-its-api
+# PW4 Group 1 - introduction
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+This project is a API for managing users, orders, and products. It is built using Java and Quarkus, and it interacts with both MongoDB and a MySQL.
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+## Getting Started
 
-## Running the application in dev mode
+To get started with this project, you need to have Java and Maven installed on your machine. Follow the steps below to set up and run the project:
 
-You can run your application in dev mode that enables live coding using:
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/SamuD03/PW4-back-end.git
+    cd PW4-back-end
+    ```
 
-```shell script
-./mvnw compile quarkus:dev
-```
+2. Build the project:
+    ```sh
+    mvn clean install
+    ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+3. Run the application:
+    ```sh
+    mvn quarkus:dev
+    ```
 
-## Packaging and running the application
+### Endpoints
 
-The application can be packaged using:
+- **`http://localhost:8080/auth/register`**
+  - **Method:** `POST`
+  - **Description:** Registers a new user.
 
-```shell script
-./mvnw package
-```
+- **`http://localhost:8080/auth/login`**
+  - **Method:** `POST`
+  - **Description:** Logs in a user.
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+- **`http://localhost:8080/auth/logout`**
+  - **Method:** `POST`
+  - **Description:** Logs out the current user.
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+- **`http://localhost:8080/auth/confirm?token=your_verification_token`**
+  - **Method:** `GET`
+  - **Description:** Confirms a user's email using a verification token.
 
-If you want to build an _über-jar_, execute the following command:
+- **`http://localhost:8080/auth/verify-phone`**
+  - **Method:** `POST`
+  - **Description:** Verifies a user's phone number.
 
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
+- **`http://localhost:8080/admin/product/{id}/update`**
+  - **Method:** `PUT`
+  - **Description:** Updates a product with the specified ID.
+  - **Path Parameter:** `{id}` - The ID of the product to update.
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+- **`http://localhost:8080/admin/product/create`**
+  - **Method:** `POST`
+  - **Description:** Creates a new product.
 
-## Creating a native executable
+- **`http://localhost:8080/admin/{id}/delete`**
+  - **Method:** `DELETE`
+  - **Description:** Deletes an admin with the specified ID.
+  - **Path Parameter:** `{id}` - The ID of the admin to delete.
 
-You can create a native executable using:
+- **`http://localhost:8080/admin/ingredient/create`**
+  - **Method:** `POST`
+  - **Description:** Creates a new ingredient.
 
-```shell script
-./mvnw package -Dnative
-```
+- **`http://localhost:8080/admin/ingredient/{id}/update`**
+  - **Method:** `PUT`
+  - **Description:** Updates an ingredient with the specified ID.
+  - **Path Parameter:** `{id}` - The ID of the ingredient to update.
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+- **`http://localhost:8080/orders`**
+  - **Method:** `GET`
+  - **Description:** Retrieves all orders.
 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
+- **`http://localhost:8080/orders/{orderId}/status`**
+  - **Method:** `PUT`
+  - **Description:** Updates the status of an order with the specified ID.
+  - **Path Parameter:** `{orderId}` - The ID of the order to update.
 
-You can then execute your native executable with: `./target/corsi-its-api-1.0-SNAPSHOT-runner`
+- **`http://localhost:8080/orders/user`**
+  - **Method:** `GET`
+  - **Description:** Retrieves orders for the currently logged-in user.
 
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
+- **`http://localhost:8080/orders/admin`**
+  - **Method:** `GET`
+  - **Description:** Retrieves all orders for admin users.
 
-## Related Guides
+- **`http://localhost:8080/user/notifications`**
+  - **Method:** `PUT`
+  - **Description:** Updates the notification preferences for the logged-in user.
 
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and
-  Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on
-  it.
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus
-  REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
+- **`http://localhost:8080/product`**
+  - **Method:** `GET`
+  - **Description:** Retrieves all products.
 
-## Provided Code
+- **`http://localhost:8080/user/profile`**
+  - **Method:** `GET`
+  - **Description:** Retrieves the profile of the currently logged-in user.
 
-### REST
+- **`http://localhost:8080/user/{id}`**
+  - **Method:** `DELETE`
+  - **Description:** Deletes a user with the specified ID.
+  - **Path Parameter:** `{id}` - The ID of the user to delete.
 
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+- **`http://localhost:8080/user/{id}`**
+  - **Method:** `PUT`
+  - **Description:** Updates the admin and verification status of a user with the specified ID.
+  - **Path Parameter:** `{id}` - The ID of the user to update.
