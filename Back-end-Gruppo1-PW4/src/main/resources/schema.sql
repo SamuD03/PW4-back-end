@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS product
     description TEXT           NOT NULL,
     quantity    INT            NOT NULL,
     price       DOUBLE NOT NULL,
-    category    VARCHAR(255)   NOT NULL
+    category    VARCHAR(255)   NOT NULL,
+    url         VARCHAR(255)   NOT NULL DEFAULT 'nan'
 );
 
 -- Create the product_ingredient junction table

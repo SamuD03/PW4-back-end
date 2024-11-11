@@ -26,6 +26,9 @@ public class Product extends PanacheEntityBase {
     @Column(name = "category", nullable = false)
     private String category;
 
+    @Column(name = "url", nullable = false, columnDefinition = "VARCHAR(255) DEFAULT 'nan'")
+    private String url = "nan";  // Default value
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "product_ingredient",
@@ -42,6 +45,7 @@ public class Product extends PanacheEntityBase {
         this.quantity = quantity;
         this.price = price;
         this.category = category;
+        this.url = "nan";
     }
 
     // Getters and Setters for id, productName, description, quantity, price, category, and ingredients
@@ -99,6 +103,14 @@ public class Product extends PanacheEntityBase {
 
     public void setIngredients(Set<Ingredient> ingredients) {
         this.ingredients = ingredients;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public void decreaseQuantity(int amount) {

@@ -202,4 +202,25 @@ public class ProductService {
             throw new RuntimeException("Failed to update product quantity: " + e.getMessage(), e);
         }
     }
+    @Transactional
+    public void uploadImage(String sessionId, Long productId, String imageUrl) throws SessionNotFoundException {
+        try {
+            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
+            if (userId == null) {
+                throw new SessionNotFoundException("Please log in");
+            }
+            if (!userRepository.checkAdmin(userId)) {
+                throw new SecurityException("Access denied");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error validating session: " + e.getMessage());
+        }
+
+
+        Product product = productRepository.findByProductId(productId)
+                .orElseThrow(() -> new NotFoundException("Product with ID " + productId + " not found"));
+
+        product.setUrl(imageUrl);
+        productRepository.edit(product, new HashSet<>());
+    }
 }

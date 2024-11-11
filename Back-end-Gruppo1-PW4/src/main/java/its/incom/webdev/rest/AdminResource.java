@@ -2,10 +2,7 @@ package its.incom.webdev.rest;
 
 import its.incom.webdev.persistence.model.Ingredient;
 import its.incom.webdev.persistence.model.Product;
-import its.incom.webdev.rest.model.CreateUserResponse;
-import its.incom.webdev.rest.model.IngredientRequest;
-import its.incom.webdev.rest.model.ProductRequest;
-import its.incom.webdev.rest.model.ProductResponse;
+import its.incom.webdev.rest.model.*;
 import its.incom.webdev.service.DataExportService;
 import its.incom.webdev.service.IngredientService;
 import its.incom.webdev.service.ProductService;
@@ -262,6 +259,24 @@ public class AdminResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Unexpected server error: " + e.getMessage())
                     .build();
+        }
+    }
+    @POST
+    @Path("/product/{id}/upload-image")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response uploadImage(@CookieParam("SESSION_ID") String sessionId, @PathParam("id") Long productId, ImageUploadRequest request) {
+        try {
+            productService.uploadImage(sessionId, productId, request.getUrl());
+            return Response.ok("Image URL successfully updated").build();
+        } catch (SessionNotFoundException e) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid session: " + e.getMessage()).build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity("Access denied: " + e.getMessage()).build();
+        } catch (NotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Product not found: " + e.getMessage()).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal server error: " + e.getMessage()).build();
         }
     }
 }
