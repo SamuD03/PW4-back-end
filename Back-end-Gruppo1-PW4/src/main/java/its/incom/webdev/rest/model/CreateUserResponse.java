@@ -1,6 +1,7 @@
 package its.incom.webdev.rest.model;
 
 public class CreateUserResponse {
+    private int id;
     private String name;
     private String surname;
     private String email;
@@ -10,6 +11,14 @@ public class CreateUserResponse {
     private boolean notification;
 
     // Getters and setters
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
@@ -69,7 +78,8 @@ public class CreateUserResponse {
     @Override
     public String toString() {
         return "CreateUserResponse{" +
-                "name='" + name + '\'' +
+                "id=" + id +
+                ", name='" + name + '\'' +
                 ", surname='" + surname + '\'' +
                 ", email='" + email + '\'' +
                 ", number='" + number + '\'' +

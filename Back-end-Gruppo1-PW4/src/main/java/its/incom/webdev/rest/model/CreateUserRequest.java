@@ -2,13 +2,25 @@ package its.incom.webdev.rest.model;
 
 public class CreateUserRequest {
 
+    private int id;
     private String name;
     private String surname;
     private String email;
     private String password;
     private String number;
+    private boolean admin;
+    private boolean verified;
+    private boolean notification;
 
-    // Getter and setter for name
+    // Getters and setters
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
@@ -17,7 +29,6 @@ public class CreateUserRequest {
         this.name = name;
     }
 
-    // Getter and setter for surname
     public String getSurname() {
         return surname;
     }
@@ -26,7 +37,6 @@ public class CreateUserRequest {
         this.surname = surname;
     }
 
-    // Getter and setter for email
     public String getEmail() {
         return email;
     }
@@ -35,7 +45,6 @@ public class CreateUserRequest {
         this.email = email;
     }
 
-    // Getter and setter for password
     public String getPassword() {
         return password;
     }
@@ -44,12 +53,35 @@ public class CreateUserRequest {
         this.password = password;
     }
 
-    // Getter and setter for number
     public String getNumber() {
         return number;
     }
 
     public void setNumber(String number) {
         this.number = number;
+    }
+
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public boolean isNotification() {
+        return notification;
+    }
+
+    public void setNotification(boolean notification) {
+        this.notification = notification;
     }
 }

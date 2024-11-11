@@ -136,34 +136,33 @@ public class UserRepository {
         return Optional.empty();
     }
 
-    public List<CreateUserResponse> getFilteredUsers(boolean admin)throws SQLException {
+    public List<CreateUserResponse> getFilteredUsers(boolean admin) throws SQLException {
         List<CreateUserResponse> list = new ArrayList<>();
 
-        // Prepare the SQL query with a filter for admin status, but without selecting the 'admin' column
-        String query = "SELECT name, surname, email, number FROM user WHERE admin = ?";
+        String query = "SELECT id, name, surname, email, number, admin, verified, notification FROM user WHERE admin = ?";
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
-            // Set the parameter for the admin filter
             statement.setBoolean(1, admin);
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     CreateUserResponse user = new CreateUserResponse();
+                    user.setId(resultSet.getInt("id")); // Set id
                     user.setName(resultSet.getString("name"));
                     user.setSurname(resultSet.getString("surname"));
+                    user.setEmail(resultSet.getString("email"));
+                    user.setNumber(resultSet.getString("number"));
+                    user.setAdmin(resultSet.getBoolean("admin")); // Set admin
+                    user.setVerified(resultSet.getBoolean("verified")); // Set verified
+                    user.setNotification(resultSet.getBoolean("notification")); // Set notification
 
-                    // Only set email or number if they are not null in the database
-                    user.setEmail(resultSet.getString("email"));  // Can be null
-                    user.setNumber(resultSet.getString("number")); // Can be null
-
-                    // Note: admin is not set here, as it's not selected in the query
                     list.add(user);
                 }
-                return list;
             }
         }
+        return list;
     }
 
     public void updateVerified(String email, boolean verified) {
