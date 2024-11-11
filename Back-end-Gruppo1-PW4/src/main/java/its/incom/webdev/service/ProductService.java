@@ -185,4 +185,21 @@ public class ProductService {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    @Transactional
+    public void updateProductQuantity(Integer id, Integer quantity) {
+        try {
+            // fetch the product by ID
+            Product product = productRepository.findByProductId(Long.valueOf(id))
+                    .orElseThrow(() -> new NotFoundException("Product with ID " + id + " not found"));
+
+            // update the product quantity
+            product.setQuantity(product.getQuantity() + quantity);
+
+            // persist the updated product with an empty set of ingredient names
+            productRepository.edit(product, new HashSet<>());
+        } catch (PersistenceException e) {
+            throw new RuntimeException("Failed to update product quantity: " + e.getMessage(), e);
+        }
+    }
 }
