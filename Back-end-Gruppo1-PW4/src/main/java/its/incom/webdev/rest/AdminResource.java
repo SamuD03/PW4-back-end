@@ -6,9 +6,11 @@ import its.incom.webdev.rest.model.CreateUserResponse;
 import its.incom.webdev.rest.model.IngredientRequest;
 import its.incom.webdev.rest.model.ProductRequest;
 import its.incom.webdev.rest.model.ProductResponse;
+import its.incom.webdev.service.DataExportService;
 import its.incom.webdev.service.IngredientService;
 import its.incom.webdev.service.ProductService;
 import its.incom.webdev.service.UserService;
+import its.incom.webdev.service.exception.ExportDataException;
 import its.incom.webdev.service.exception.SessionNotFoundException;
 import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
@@ -16,15 +18,19 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.io.File;
+import java.time.LocalDate;
 import java.util.List;
 
 @Path("/admin")
 public class AdminResource {
 
     private final UserService userService;
+    private final DataExportService dataExportService;
 
-    public AdminResource(UserService userService){
+    public AdminResource(UserService userService, DataExportService dataExportService){
         this.userService = userService;
+        this.dataExportService = dataExportService;
     }
     @Inject
     IngredientService ingredientService;
@@ -213,4 +219,51 @@ public class AdminResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Unexpected error: " + e.getMessage()).build();
         }
     }
+
+    @GET
+    @Path("/product/export")
+    @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public Response productsToExcel(@CookieParam("SESSION_ID") String sessionId){
+        try{
+            File file = dataExportService.exportProductsToExcel(sessionId);
+            return Response.ok(file).header("Content-Disposition", "attachment; filename=\"Products.xlsx\"").build();
+        } catch (SessionNotFoundException e){
+            return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
+        } catch (SecurityException e){
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (ExportDataException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error exporting data: " + e.getMessage())
+                    .build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Unexpected server error: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/order/{date}/export")
+    @Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public Response orderToExcel(@CookieParam("SESSION_ID") String sessionId, @PathParam("date") String date){
+        try{
+            LocalDate localDate = LocalDate.parse(date);
+            File file = dataExportService.exportOrdersToExcel(sessionId, localDate);
+            return Response.ok(file).header("Content-Disposition", "attachment; filename=\"Orders_" + date + ".xlsx\"").build();
+        } catch (SessionNotFoundException e){
+            return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
+        } catch (SecurityException e){
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (ExportDataException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error exporting data: " + e.getMessage())
+                    .build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Unexpected server error: " + e.getMessage())
+                    .build();
+        }
+    }
 }
+
+

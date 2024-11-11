@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -292,4 +293,62 @@ public class OrderRepository {
             return Optional.empty();
         }
     }
+
+    public List<Order> findOrdersByDate(LocalDate date) {
+        List<Order> orders = new ArrayList<>();
+
+        // Define the start and end of the day
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        // Create a filter to find orders within the specified date range
+        Document dateFilter = new Document("pickup",
+                new Document("$gte", startOfDay.toString())
+                        .append("$lt", endOfDay.toString()));
+
+        // Retrieve documents from the database based on the filter, sorting by pickup time
+        for (Document document : ordersCollection.find(dateFilter).sort(new Document("pickup",1))) {
+            // Convert each document to an Order object
+            Order order = new Order();
+
+            // Set the order ID from the ObjectId field
+            ObjectId objectId = document.getObjectId("_id");
+            if (objectId != null) {
+                order.setId(objectId);
+            }
+            // Set the buyer ID from the document
+            order.setIdBuyer(document.getString("id_buyer"));
+
+            // Convert the content list into Product objects
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> content = (List<Map<String, Object>>) document.get("content");
+            List<Product> products = new ArrayList<>();
+            if (content != null) {
+                for (Map<String, Object> item : content) {
+                    Product product = new Product();
+                    product.setId((Integer) item.get("id"));
+                    product.setProductName((String) item.get("name"));
+                    product.setDescription((String) item.get("description"));
+                    product.setPrice(Double.valueOf(item.get("price").toString()));
+                    product.setCategory((String) item.get("category"));
+                    product.setQuantity((Integer) item.get("quantity"));
+                    products.add(product);
+                }
+            }
+            order.setContent(products);
+
+            // Set the pickup time as LocalDateTime from the document's "pickup" field
+            String pickupTimeStr = document.getString("pickup");
+            if (pickupTimeStr != null) {
+                order.setDateTime(LocalDateTime.parse(pickupTimeStr));
+            }
+
+            order.setComment(document.getString("comment"));
+            order.setStatus(document.getString("status"));
+            orders.add(order);
+        }
+
+        return orders;
+    }
+
 }
