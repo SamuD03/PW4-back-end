@@ -112,6 +112,21 @@ public class OrderService {
             return false;
         }
     }
+
+    public Order getOrderById(String orderId) {
+        try {
+            // fetch the order from the repository using the order ID
+            Optional<Order> orderOptional = orderRepository.findById(orderId);
+            if (orderOptional.isPresent()) {
+                return orderOptional.get();
+            } else {
+                throw new IllegalArgumentException("Order not found for ID: " + orderId);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error fetching order by ID", e);
+        }
+    }
 }
 
 

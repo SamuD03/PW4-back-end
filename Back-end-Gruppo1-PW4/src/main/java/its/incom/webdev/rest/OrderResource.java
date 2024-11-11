@@ -1,10 +1,8 @@
 package its.incom.webdev.rest;
 
 import its.incom.webdev.persistence.model.Order;
-import its.incom.webdev.service.EmailService;
-import its.incom.webdev.service.NotificationService;
-import its.incom.webdev.service.OrderService;
-import its.incom.webdev.service.SessionService;
+import its.incom.webdev.persistence.model.Product;
+import its.incom.webdev.service.*;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Cookie;
@@ -21,6 +19,9 @@ public class OrderResource {
 
     @Inject
     OrderService orderService;
+
+    @Inject
+    ProductService productService;
 
     @Inject
     SessionService sessionService;
@@ -197,6 +198,19 @@ public class OrderResource {
             String newStatus = statusUpdate.get("status");
             if (newStatus == null || newStatus.isEmpty()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity("Status is required").build();
+            }
+
+            // fetch the order details
+            Order order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return Response.status(Response.Status.NOT_FOUND).entity("Order not found").build();
+            }
+
+            // if the new status is "cancelled", update the product quantities
+            if ("cancelled".equalsIgnoreCase(newStatus)) {
+                for (Product item : order.getContent()) {
+                    productService.updateProductQuantity(item.getId(), item.getQuantity());
+                }
             }
 
             // update order status using OrderService
