@@ -205,5 +205,27 @@ public class UserResource {
                     .build();
         }
     }
+    @GET
+    @Path("/profile/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUserProfileById(@PathParam("id") int userId) {
+        try {
+            // fetch user information from the database
+            Optional<User> optionalUser = userRepository.findById(userId);
+            if (optionalUser.isEmpty()) {
+                return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
+            }
+
+            // return the user information
+            User user = optionalUser.get();
+            return Response.ok(user).build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"message\": \"Unexpected error: " + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
 }
 
