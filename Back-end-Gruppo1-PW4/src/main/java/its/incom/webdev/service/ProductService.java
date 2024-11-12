@@ -99,25 +99,21 @@ public class ProductService {
 
     @Transactional
     public Product update(String sessionId, Long productId, String productName, String description, Integer quantity, Double price, String category, Set<String> ingredientNames, String url) throws SessionNotFoundException {
-        try{
-            //controllo sessione
+        try {
             Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
-            if (userId == null){
+            if (userId == null) {
                 throw new SessionNotFoundException("Please log in");
             }
-
-            //controllo admin
-            if(!userRepository.checkAdmin(userId)){
+            if (!userRepository.checkAdmin(userId)) {
                 throw new SecurityException("Access denied");
             }
-        } catch (SQLException e){
-            throw new RuntimeException(e.getMessage());
+        } catch (SQLException e) {
+            throw new RuntimeException("Error validating session: " + e.getMessage());
         }
 
         Product product = productRepository.findByProductId(productId)
-                .orElseThrow(() -> new NotFoundException("Product with " + productId + " not found"));
+                .orElseThrow(() -> new NotFoundException("Product with ID " + productId + " not found"));
 
-        // Update product fields if new values are provided
         if (productName != null) product.setProductName(productName);
         if (description != null) product.setDescription(description);
         if (quantity != null) product.setQuantity(quantity);
@@ -125,23 +121,32 @@ public class ProductService {
         if (category != null) product.setCategory(category);
         if (url != null) product.setUrl(url);
 
-        // Update the ingredients
         if (ingredientNames != null && !ingredientNames.isEmpty()) {
-            Set<Ingredient> ingredients = new HashSet<>();
+            Set<Ingredient> ingredients = new HashSet<>(); // Set to avoid duplicates
 
             for (String ingredientName : ingredientNames) {
+                // Find the ingredient by name
                 Ingredient ingredient = ingredientRepository.findByName(ingredientName);
-                if (ingredient != null) {
-                    ingredients.add(ingredient);
+                if (ingredient == null) {
+                    throw new RuntimeException("Ingredient not found: " + ingredientName);
                 }
+
+                // add the ingredient to the set
+                ingredients.add(ingredient);
             }
 
-            // Set the new ingredients for the product
+            // set the new ingredients for the product
             product.setIngredients(ingredients);
         }
 
-        // Persist the updated product (the edit method is already updated to handle ingredients)
-        return productRepository.edit(product, ingredientNames);
+        // persist the updated product
+        try {
+            productRepository.persist(product);
+        } catch (PersistenceException e) {
+            throw new RuntimeException("Error updating product: " + e.getMessage());
+        }
+
+        return product;
     }
 
     @Transactional
