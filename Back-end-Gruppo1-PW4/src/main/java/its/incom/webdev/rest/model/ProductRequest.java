@@ -13,6 +13,7 @@ public class ProductRequest {
     private Double price;
     private String category;
     private Set<String> ingredients;
+    private String url;
 
     private IngredientRepository ingredientRepository;
 
@@ -96,6 +97,13 @@ public class ProductRequest {
 
     public void setIngredientRepository(IngredientRepository ingredientRepository) {
         this.ingredientRepository = ingredientRepository;
+    }
+    public void setUrl(Double price) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
     }
 // Getters and Setters for the rest of the fields
 }

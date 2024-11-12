@@ -74,7 +74,8 @@ public class AdminResource {
                     request.getQuantity(),
                     request.getPrice(),
                     request.getCategory(),
-                    request.getIngredients()
+                    request.getIngredients(),
+                    request.getUrl()
             );
 
             ProductResponse response = new ProductResponse(product);

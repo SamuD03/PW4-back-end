@@ -98,7 +98,7 @@ public class ProductService {
 
 
     @Transactional
-    public Product update(String sessionId, Long productId, String productName, String description, Integer quantity, Double price, String category, Set<String> ingredientNames) throws SessionNotFoundException {
+    public Product update(String sessionId, Long productId, String productName, String description, Integer quantity, Double price, String category, Set<String> ingredientNames, String url) throws SessionNotFoundException {
         try{
             //controllo sessione
             Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
@@ -123,6 +123,7 @@ public class ProductService {
         if (quantity != null) product.setQuantity(quantity);
         if (price != null) product.setPrice(price);
         if (category != null) product.setCategory(category);
+        if (url != null) product.setUrl(url);
 
         // Update the ingredients
         if (ingredientNames != null && !ingredientNames.isEmpty()) {
