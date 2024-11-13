@@ -16,11 +16,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -130,6 +131,7 @@ public class OrderRepository {
     // Check if the time slot is already booked
     private boolean isTimeSlotBooked(LocalDateTime pickupTime) {
         LocalDateTime endTime = pickupTime.plusMinutes(9);
+        // Log per vedere i valori passati al filtro
         Document existingOrder = ordersCollection.find(
                 new Document("$or", List.of(
                         new Document("pickup", new Document("$lt", endTime.toString()).append("$gte", pickupTime.toString())),
@@ -141,6 +143,7 @@ public class OrderRepository {
 
     public List<Order> findOrdersByUserId(String userId) {
         return ordersCollection.find(new Document("id_buyer", userId))
+                .sort(new Document("pickup",1))
                 .map(document -> {
                     try {
                         Order order = new Order();
@@ -198,7 +201,7 @@ public class OrderRepository {
 
     public List<Order> findAllOrders() {
         List<Order> orders = new ArrayList<>();
-        for (Document document : ordersCollection.find()) {
+        for (Document document : ordersCollection.find().sort(new Document("pickup",1))) {
             // convert Document to Order object
             Order order = new Order();
 
@@ -351,4 +354,47 @@ public class OrderRepository {
         return orders;
     }
 
+    public List<String> findUnavailableTimesByDate(LocalDate date) {
+        List<String> unavailableTimes = new ArrayList<>();
+
+        // Definisci l'orario di apertura e chiusura della pasticceria
+        LocalTime openingTime = LocalTime.of(8, 0);
+        LocalTime closingTime = LocalTime.of(19, 0);
+
+        // Itera su ogni possibile orario della giornata
+        for (LocalTime time = openingTime; time.isBefore(closingTime); time = time.plusMinutes(10)) {
+            LocalDateTime pickupTime = LocalDateTime.of(date, time);
+
+            // Verifica se l'orario è già prenotato
+            if (isBooked(pickupTime)) {
+                // Aggiungi l'orario occupato alla lista
+                unavailableTimes.add(time.format(DateTimeFormatter.ofPattern("HH:mm")));
+            }
+        }
+
+        return unavailableTimes;
+    }
+
+    private boolean isBooked(LocalDateTime pickupTime) {
+        // Calcola l'orario di fine, che è 9 minuti dopo l'orario di pickup
+        LocalDateTime endTime = pickupTime.plusMinutes(9);
+        System.out.println(pickupTime);
+        System.out.println(endTime);
+
+        // Format the pickup time and end time to strings in ISO_LOCAL_DATE_TIME format (YYYY-MM-DDTHH:mm)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+        String pickupTimeStr = pickupTime.format(formatter);
+        String endTimeStr = endTime.format(formatter);
+
+        // Esegui la query per verificare se esiste già un ordine con un pickup time che si sovrappone
+        Document existingOrder = ordersCollection.find(
+                new Document("$or", List.of(
+                        new Document("pickup", new Document("$lt", endTimeStr).append("$gte", pickupTimeStr)),
+                        new Document("pickup", new Document("$lt", endTimeStr).append("$gte", pickupTime.minusMinutes(9).format(formatter)))
+                ))
+        ).first();
+
+        // Restituisci true se esiste un ordine che ha l'orario di pickup che si sovrappone con quello dato
+        return existingOrder != null;
+    }
 }

@@ -2,12 +2,15 @@ package its.incom.webdev.rest;
 
 import its.incom.webdev.persistence.model.Order;
 import its.incom.webdev.persistence.model.Product;
+import its.incom.webdev.persistence.repository.OrderRepository;
 import its.incom.webdev.service.*;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.DayOfWeek;
@@ -31,6 +34,8 @@ public class OrderResource {
 
     @Inject
     NotificationService notificationService;
+    @Inject
+    OrderRepository orderRepository;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -226,5 +231,18 @@ public class OrderResource {
                     .entity("{\"message\": \"Unexpected error: " + e.getMessage() + "\"}")
                     .build();
         }
+    }
+
+    @GET
+    @Path("/times")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> checkAvailability(@QueryParam("date") String date) {
+            // Converte la data in LocalDate
+            LocalDate selectedDate = LocalDate.parse(date);
+
+            // Recupera tutti gli orari occupati per la data selezionata
+
+            return orderRepository.findUnavailableTimesByDate(selectedDate);
+            // Ritorna la lista degli orari occupati
     }
 }
