@@ -62,10 +62,8 @@ public class AdminResource {
     @Path("/product/{id}/update")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") Long productId, @CookieParam("SESSION_ID") String sessionId, ProductRequest request){
-        System.out.println("Id prodotto " + productId);
+    public Response update(@PathParam("id") Long productId, @CookieParam("SESSION_ID") String sessionId, ProductRequest request) {
         try {
-            // Chiama il service per aggiornare il prodotto
             Product product = productService.update(
                     sessionId,
                     productId,
@@ -78,14 +76,13 @@ public class AdminResource {
                     request.getUrl()
             );
 
+            // Return the product in the desired structure
             ProductResponse response = new ProductResponse(product);
-
-            // Restituisce la risposta con il prodotto aggiornato
             return Response.ok(response).build();
 
         } catch (SessionNotFoundException e) {
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("Sessione non valida: " + e.getMessage())
+                    .entity("Session not valid: " + e.getMessage())
                     .build();
         } catch (SecurityException e) {
             return Response.status(Response.Status.FORBIDDEN)
@@ -93,11 +90,11 @@ public class AdminResource {
                     .build();
         } catch (NotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Prodotto non trovato: " + e.getMessage())
+                    .entity("Product not found: " + e.getMessage())
                     .build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(e.getMessage())
+                    .entity("Unexpected error: " + e.getMessage())
                     .build();
         }
     }

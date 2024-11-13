@@ -3,7 +3,7 @@ package its.incom.webdev.rest.model;
 import its.incom.webdev.persistence.model.Ingredient;
 import its.incom.webdev.persistence.model.Product;
 
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class ProductResponse {
@@ -13,7 +13,8 @@ public class ProductResponse {
     private Integer quantity;
     private Double price;
     private String category;
-    private Set<String> ingredients;
+    private String url;
+    private List<IngredientResponse> ingredients;
 
     public ProductResponse(Product product) {
         this.id = product.getId();
@@ -22,9 +23,10 @@ public class ProductResponse {
         this.quantity = product.getQuantity();
         this.price = product.getPrice();
         this.category = product.getCategory();
+        this.url = product.getUrl();
         this.ingredients = product.getIngredients().stream()
-                .map(Ingredient::getName)  // Assuming `Ingredient` has a `getName()` method
-                .collect(Collectors.toSet());
+                .map(ingredient -> new IngredientResponse(ingredient.getId(), ingredient.getName()))
+                .collect(Collectors.toList());
     }
 
     public Integer getId() {
@@ -75,11 +77,46 @@ public class ProductResponse {
         this.category = category;
     }
 
-    public Set<String> getIngredients() {
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public List<IngredientResponse> getIngredients() {
         return ingredients;
     }
 
-    public void setIngredients(Set<String> ingredients) {
+    public void setIngredients(List<IngredientResponse> ingredients) {
         this.ingredients = ingredients;
+    }
+
+    // inner class to represent an ingredient with id and name
+    public static class IngredientResponse {
+        private Integer id;
+        private String name;
+
+        public IngredientResponse(Integer id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }
