@@ -214,6 +214,30 @@ public class AdminResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Unexpected error: " + e.getMessage()).build();
         }
     }
+    @DELETE
+    @Path("/ingredient/{id}/delete")
+    public Response deleteIngredient(@CookieParam("SESSION_ID") String sessionId, @PathParam("id") Long ingredientId) {
+        try {
+            ingredientService.delete(sessionId, ingredientId);
+            return Response.ok("Ingredient deleted").build();
+        } catch (SessionNotFoundException e) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity("Invalid session: " + e.getMessage())
+                    .build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(e.getMessage())
+                    .build();
+        } catch (NotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Ingredient not found: " + e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Internal server error: " + e.getMessage())
+                    .build();
+        }
+    }
 
     @GET
     @Path("/product/export")

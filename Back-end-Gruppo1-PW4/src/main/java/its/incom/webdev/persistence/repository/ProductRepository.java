@@ -66,4 +66,10 @@ public class ProductRepository implements PanacheRepository<Product> {
     public boolean existsByName(String name){
         return find("productName", name).firstResult() != null;
     }
+
+    public boolean isIngredientUsed(Long ingredientId) {
+        return find("SELECT 1 FROM Product p JOIN p.ingredients i WHERE i.id = ?1", ingredientId)
+                .firstResultOptional()
+                .isPresent();
+    }
 }

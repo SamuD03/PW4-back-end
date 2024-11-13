@@ -60,7 +60,7 @@ public class ProductService {
         }
 
         try {
-            // Verifica se un prodotto con lo stesso nome esiste già
+            // Check if a product with the same name already exists
             if (productRepository.existsByName(name)) {
                 throw new IllegalArgumentException("Product with name '" + name + "' already exists");
             }
@@ -76,7 +76,10 @@ public class ProductService {
                     // Find the ingredient by name
                     Ingredient ingredient = ingredientRepository.findByName(ingredientName);
                     if (ingredient == null) {
-                        throw new RuntimeException("Ingredient not found: " + ingredientName);
+                        // Create the ingredient if it doesn't exist
+                        ingredient = new Ingredient();
+                        ingredient.setName(ingredientName);
+                        ingredientRepository.persist(ingredient);
                     }
 
                     // Add the ingredient to the set of ingredients for the product
@@ -85,10 +88,10 @@ public class ProductService {
 
                 // Set the product's ingredients
                 product.setIngredients(ingredients);  // This automatically links the ingredients to the product
-
-                // Persist the product with its ingredients
-                productRepository.persist(product);  // No need for manual persistence of product-ingredient relation
             }
+
+            // persist the product with its ingredients
+            productRepository.persist(product);  // No need for manual persistence of product-ingredient relation
 
             return product;
         } catch (PersistenceException e) {
@@ -128,18 +131,21 @@ public class ProductService {
                 // Find the ingredient by name
                 Ingredient ingredient = ingredientRepository.findByName(ingredientName);
                 if (ingredient == null) {
-                    throw new RuntimeException("Ingredient not found: " + ingredientName);
+                    // Create the ingredient if it doesn't exist
+                    ingredient = new Ingredient();
+                    ingredient.setName(ingredientName);
+                    ingredientRepository.persist(ingredient);
                 }
 
-                // add the ingredient to the set
+                // Add the ingredient to the set
                 ingredients.add(ingredient);
             }
 
-            // set the new ingredients for the product
+            // Set the new ingredients for the product
             product.setIngredients(ingredients);
         }
 
-        // persist the updated product
+        // Persist the updated product
         try {
             productRepository.persist(product);
         } catch (PersistenceException e) {
