@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 
+import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 import io.quarkus.mailer.Mailer;
@@ -185,9 +186,8 @@ public class AuthenticationResource {
         try {
             Optional<String> emailOpt = emailService.getEmailByVerificationToken(token);
             if (emailOpt.isEmpty()) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("{\"message\": \"Invalid or expired token\"}")
-                        .build();
+                URI redirectUri = new URI("http://localhost:3000/verify-email-expired");
+                return Response.seeOther(redirectUri).build();
             }
 
             String email = emailOpt.get();
@@ -200,7 +200,9 @@ public class AuthenticationResource {
                 // Delete the verification token
                 emailService.deleteVerificationToken(token);
 
-                return Response.ok("{\"message\": \"Email verified successfully\"}").build();
+                // Redirect to a success page
+                URI redirectUri = new URI("http://localhost:3000/verify-email");
+                return Response.seeOther(redirectUri).build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity("{\"message\": \"User not found\"}")

@@ -1,8 +1,9 @@
 package its.incom.webdev.rest.model;
 
 public class IngredientRequest {
-    public String name;
+    private String name;
 
+    // Getters and setters
     public String getName() {
         return name;
     }
