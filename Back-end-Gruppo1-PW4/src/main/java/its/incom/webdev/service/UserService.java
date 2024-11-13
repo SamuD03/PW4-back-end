@@ -5,7 +5,6 @@ import its.incom.webdev.persistence.model.*;
 
 import its.incom.webdev.persistence.repository.SessionRepository;
 import its.incom.webdev.persistence.repository.UserRepository;
-import its.incom.webdev.rest.model.CreateUserRequest;
 import its.incom.webdev.rest.model.CreateUserResponse;
 import its.incom.webdev.service.exception.SessionNotFoundException;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -26,30 +25,6 @@ public class UserService {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.hashCalculator = hashCalculator;
-    }
-
-    // Metodo privato per convertire un oggetto Utente in un oggetto CreateUtenteResponse
-    private CreateUserResponse convertToResponse(User user) {
-        CreateUserResponse response = new CreateUserResponse();
-        response.setName(user.getName());
-        response.setSurname(user.getSurname());
-        response.setEmail(user.getEmail());
-
-        return response;
-    }
-
-    // Metodo pubblico per ottenere un utente dal database tramite il suo ID
-    // Restituisce un oggetto CreateUtenteResponse se l'utente esiste, altrimenti lancia un'eccezione
-    public CreateUserResponse getUtenteByEmail(String email) throws SQLException {
-        // Use null for the phoneNumber parameter if you only want to search by email
-        Optional<User> utente = userRepository.findByEmailOrNumber(email, null);
-        if (utente.isPresent()) {
-            CreateUserResponse response = convertToResponse(utente.get());
-            return response;
-        } else {
-            // Handle the case where the user is not found
-            throw new SQLException("Utente non trovato con email: " + email);
-        }
     }
 
     public List<CreateUserResponse> getUsers(String sessionId, boolean admin)throws SessionNotFoundException {

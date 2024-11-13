@@ -4,7 +4,6 @@ import its.incom.webdev.persistence.model.User;
 import its.incom.webdev.rest.model.CreateUserResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -24,52 +23,6 @@ public class UserRepository {
 
     public UserRepository(DataSource database) {
         this.database = database;
-    }
-
-    public User createUtente(User user) throws SQLException {
-        if (checkUtente(user.getEmail(), user.getPswHash())) {
-            throw new BadRequestException("Utente già esistente");
-        }
-
-        String query = "INSERT INTO user (name, surname, email, pswHash, admin, verified) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setString(1, user.getName());
-            statement.setString(2, user.getSurname());
-            statement.setString(3, user.getEmail());
-            statement.setString(4, user.getPswHash());
-            statement.setBoolean(5, user.isAdmin());
-            statement.setBoolean(6, user.isVerified());
-
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Errore durante la creazione dell'utente", e);
-        }
-
-        return user;
-    }
-
-    private boolean checkUtente(String email, String pswHash) {
-        String query = "SELECT COUNT(*) FROM user WHERE email = ? AND pswHash = ?";
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, email);
-            statement.setString(2, pswHash);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    int count = resultSet.getInt(1);
-                    return count > 0;
-                } else {
-                    return false;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Errore durante il controllo dell'utente", e);
-        }
     }
 
     public Optional<User> findByIdAndPsw(Integer userId, String pswHash) {
@@ -359,31 +312,6 @@ public class UserRepository {
         return Optional.empty();
     }
 
-    public Optional<User> findByEmail(String email) {
-        String query = "SELECT id, name, surname, email, pswHash, number, admin, verified FROM user WHERE email = ?";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setString(1, email);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    User user = new User();
-                    user.setId(resultSet.getInt("id"));
-                    user.setName(resultSet.getString("name"));
-                    user.setSurname(resultSet.getString("surname"));
-                    user.setEmail(resultSet.getString("email"));
-                    user.setPswHash(resultSet.getString("pswHash"));
-                    user.setNumber(resultSet.getString("number"));
-                    user.setAdmin(resultSet.getBoolean("admin"));
-                    user.setVerified(resultSet.getBoolean("verified"));
-                    return Optional.of(user);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error finding user by email", e);
-        }
-        return Optional.empty();
-    }
 
     public List<User> getAllAdmins() {
         String query = "SELECT id, name, surname, email FROM user WHERE admin = true";

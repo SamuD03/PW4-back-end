@@ -5,14 +5,6 @@ import its.incom.webdev.persistence.model.Ingredient;
 import its.incom.webdev.persistence.model.Product;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.PersistenceException;
-import jakarta.transaction.Transactional;
-
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 @ApplicationScoped
