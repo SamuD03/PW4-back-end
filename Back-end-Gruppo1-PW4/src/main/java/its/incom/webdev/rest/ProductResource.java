@@ -25,11 +25,7 @@ public class ProductResource {
         try{
             List<Product> products = productService.getAll(sessionId);
             return Response.ok(products).build();
-        } catch (SessionNotFoundException e){
-            return Response.status(Response.Status.UNAUTHORIZED).entity(e.getMessage()).build();
         } catch (PersistenceException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
-        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Unexpected error: " + e.getMessage()).build();
         }
     }

@@ -174,17 +174,7 @@ public class ProductService {
         productRepository.deleteProduct(productId);
     }
 
-    public List<Product> getAll(String sessionId) throws SessionNotFoundException{
-        try {
-            // Session check
-            Integer userId = sessionRepository.findUserIdBySessionId(sessionId);
-            if (userId == null) {
-                throw new SessionNotFoundException("Please log in");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-
+    public List<Product> getAll(String sessionId){
         try{
             return productRepository.getAll();
         } catch (PersistenceException e){
