@@ -75,4 +75,36 @@ public class UserService {
 
         return userRepository.updateNotificationPreference(userId, notification);
     }
+
+    public Optional<User> findById(Integer userId) {
+        return userRepository.findById(userId);
+    }
+
+    public boolean deleteUserById(int userIdToDelete) {
+        return userRepository.deleteUserById(userIdToDelete);
+    }
+
+    public boolean updateUser(User user) {
+        return userRepository.updateUser(user);
+    }
+
+    public Optional<User> findByEmailOrNumber(String email, String phoneNumber) {
+        return userRepository.findByEmailOrNumber(email, phoneNumber);
+    }
+
+    public void updateVerifiedWithPhone(String phoneNumber, boolean verified) {
+        userRepository.updateVerifiedWithPhone(phoneNumber, verified);
+    }
+
+    public Optional<User> findNumber(String phoneNumber) {
+        return userRepository.findNumber(phoneNumber);
+    }
+
+    public User create(User u) {
+        return userRepository.create(u);
+    }
+
+    public void updateVerified(String email, boolean verified) {
+        userRepository.updateVerified(email, verified);
+    }
 }

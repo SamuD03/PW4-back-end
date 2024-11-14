@@ -1,6 +1,7 @@
 package its.incom.webdev.service;
 
 import its.incom.webdev.persistence.model.User;
+import its.incom.webdev.persistence.repository.AuthenticationRepository;
 import its.incom.webdev.persistence.repository.UserRepository;
 import its.incom.webdev.persistence.repository.SessionRepository;
 import its.incom.webdev.service.exception.ExistingSessionException;
@@ -8,33 +9,28 @@ import its.incom.webdev.service.exception.SessionCreationException;
 import its.incom.webdev.service.exception.WrongUsernameOrPasswordException;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
 
 @ApplicationScoped
 public class AuthenticationService {
 
-    @Inject
-    DataSource database;
 
     private final UserRepository userRepository;
-    private final UserService userService;
     private final HashCalculator hashCalculator;
     private final SessionRepository sessionRepository;
+    private final AuthenticationRepository authenticationRepository;
 
     public AuthenticationService(
             UserRepository userRepository,
-            UserService userService,
             HashCalculator hashCalculator,
-            SessionRepository sessionRepository
+            SessionRepository sessionRepository, AuthenticationRepository authenticationRepository
     ) {
         this.userRepository = userRepository;
-        this.userService = userService;
         this.hashCalculator = hashCalculator;
         this.sessionRepository = sessionRepository;
+        this.authenticationRepository = authenticationRepository;
     }
 
     public String login(String email, String password, String phoneNumber) throws WrongUsernameOrPasswordException, SessionCreationException, ExistingSessionException {
@@ -77,26 +73,6 @@ public class AuthenticationService {
     }
 
     public Optional<String> getSessionIdByEmailOrPhone(String email, String phoneNumber) {
-        String query = "SELECT s.id FROM session s " +
-                "JOIN user u ON s.user_id = u.id " +
-                "WHERE u.email = ? OR u.number = ?";
-
-        try (Connection connection = database.getConnection();
-             PreparedStatement statement = connection.prepareStatement(query)) {
-
-            statement.setString(1, email);
-            statement.setString(2, phoneNumber);
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(resultSet.getString("id"));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to retrieve session ID", e);
-        }
-
-        return Optional.empty();
+        return authenticationRepository.getSessionIdByEmailOrPhone(email, phoneNumber);
     }
 }

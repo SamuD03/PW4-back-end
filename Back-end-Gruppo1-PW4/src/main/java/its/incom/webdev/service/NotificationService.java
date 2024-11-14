@@ -9,14 +9,11 @@ import its.incom.webdev.persistence.model.User;
 import its.incom.webdev.persistence.repository.OrderRepository;
 import its.incom.webdev.persistence.repository.UserRepository;
 
-import com.mongodb.client.MongoClient;
-import javax.sql.DataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,12 +28,6 @@ public class NotificationService {
 
     @Inject
     UserRepository userRepository;
-
-    @Inject
-    private MongoClient mongoClient;
-
-    @Inject
-    private DataSource dataSource;
 
 
     @Scheduled(every = "24h")

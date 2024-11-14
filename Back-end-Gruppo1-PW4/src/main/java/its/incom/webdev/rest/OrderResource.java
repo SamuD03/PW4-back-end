@@ -2,7 +2,6 @@ package its.incom.webdev.rest;
 
 import its.incom.webdev.persistence.model.Order;
 import its.incom.webdev.persistence.model.Product;
-import its.incom.webdev.persistence.repository.OrderRepository;
 import its.incom.webdev.service.*;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -34,8 +33,6 @@ public class OrderResource {
 
     @Inject
     NotificationService notificationService;
-    @Inject
-    OrderRepository orderRepository;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -242,7 +239,7 @@ public class OrderResource {
 
             // Recupera tutti gli orari occupati per la data selezionata
 
-            return orderRepository.findUnavailableTimesByDate(selectedDate);
+            return orderService.findUnavailableTimesByDate(selectedDate);
             // Ritorna la lista degli orari occupati
     }
 }

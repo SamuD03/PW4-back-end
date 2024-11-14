@@ -2,7 +2,6 @@ package its.incom.webdev.rest;
 
 import its.incom.webdev.rest.model.CreateUserRequest;
 import its.incom.webdev.persistence.model.User;
-import its.incom.webdev.persistence.repository.UserRepository;
 import its.incom.webdev.service.*;
 import its.incom.webdev.service.exception.ExistingSessionException;
 import its.incom.webdev.service.exception.SessionCreationException;
@@ -21,7 +20,6 @@ import io.quarkus.mailer.Mailer;
 
 @Path("/auth")
 public class AuthenticationResource {
-    private final UserRepository userRepository;
     private final AuthenticationService authenticationService;
     private final UserService userService;
     private final HashCalculator hashCalculator;
@@ -32,8 +30,7 @@ public class AuthenticationResource {
     Mailer mailer;
 
     @Inject
-    public AuthenticationResource(UserRepository userRepository, AuthenticationService authenticationService, UserService userService, HashCalculator hashCalculator, EmailService emailService, PhoneService phoneService) {
-        this.userRepository = userRepository;
+    public AuthenticationResource(AuthenticationService authenticationService, UserService userService, HashCalculator hashCalculator, EmailService emailService, PhoneService phoneService) {
         this.authenticationService = authenticationService;
         this.userService = userService;
         this.hashCalculator = hashCalculator;
@@ -52,7 +49,7 @@ public class AuthenticationResource {
 
         try {
             // Fetch user by email or phone number
-            Optional<User> userOpt = userRepository.findByEmailOrNumber(email, phoneNumber);
+            Optional<User> userOpt = userService.findByEmailOrNumber(email, phoneNumber);
             if (userOpt.isEmpty()) {
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity("Wrong username or password")
@@ -134,7 +131,7 @@ public class AuthenticationResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(CreateUserRequest cur) {
         // Check if user already exists by email or phone number
-        Optional<User> existingUser = userRepository.findByEmailOrNumber(cur.getEmail(), cur.getNumber());
+        Optional<User> existingUser = userService.findByEmailOrNumber(cur.getEmail(), cur.getNumber());
         if (existingUser.isPresent()) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("{\"message\": \"User already exists\"}")
@@ -154,7 +151,7 @@ public class AuthenticationResource {
         u.setVerified(false);
 
         // Save user
-        User u1 = userRepository.create(u);
+        User u1 = userService.create(u);
 
         return Response.status(Response.Status.CREATED)
                 .entity(u1)
@@ -192,10 +189,10 @@ public class AuthenticationResource {
 
             String email = emailOpt.get();
             // Use findByEmailOrNumber to search for the user
-            Optional<User> userOpt = userRepository.findByEmailOrNumber(email, null);
+            Optional<User> userOpt = userService.findByEmailOrNumber(email, null);
             if (userOpt.isPresent()) {
                 // Set verified to true
-                userRepository.updateVerified(email, true);
+                userService.updateVerified(email, true);
 
                 // Delete the verification token
                 emailService.deleteVerificationToken(token);
@@ -235,16 +232,16 @@ public class AuthenticationResource {
             }
 
             // Find the user by phone number
-            Optional<User> userOpt = userRepository.findByEmailOrNumber(null, phoneNumber);
+            Optional<User> userOpt = userService.findByEmailOrNumber(null, phoneNumber);
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 System.out.println("Updating verified status for phone number: " + phoneNumber);
 
                 // Update verified status for the phone number
-                userRepository.updateVerifiedWithPhone(phoneNumber, true);
+                userService.updateVerifiedWithPhone(phoneNumber, true);
 
                 // Verify that the update succeeded
-                Optional<User> updatedUser = userRepository.findByEmailOrNumber(null, phoneNumber);
+                Optional<User> updatedUser = userService.findByEmailOrNumber(null, phoneNumber);
                 if (updatedUser.isPresent() && updatedUser.get().isVerified()) {
                     return Response.ok("{\"message\": \"Phone verified successfully\"}").build();
                 } else {
@@ -273,7 +270,7 @@ public class AuthenticationResource {
 
         try {
             // Fetch user by phone number
-            Optional<User> userOpt = userRepository.findNumber(phoneNumber);
+            Optional<User> userOpt = userService.findNumber(phoneNumber);
             if (userOpt.isEmpty()) {
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity("{\"message\": \"User not found\"}")

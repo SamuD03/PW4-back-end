@@ -8,6 +8,8 @@ import its.incom.webdev.persistence.repository.ProductRepository;
 import its.incom.webdev.persistence.repository.UserRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -17,13 +19,13 @@ import java.util.Optional;
 public class OrderService {
 
     @Inject
-    private OrderRepository orderRepository;
+    OrderRepository orderRepository;
 
     @Inject
-    private ProductRepository productRepository;
+    ProductRepository productRepository;
 
     @Inject
-    private UserRepository userRepository;
+    UserRepository userRepository;
 
     public List<Order> getAllOrders() {
         return orderRepository.findAllOrders();
@@ -127,6 +129,10 @@ public class OrderService {
             e.printStackTrace();
             throw new RuntimeException("Error fetching order by ID", e);
         }
+    }
+
+    public List<String> findUnavailableTimesByDate(LocalDate selectedDate) {
+        return orderRepository.findUnavailableTimesByDate(selectedDate);
     }
 }
 

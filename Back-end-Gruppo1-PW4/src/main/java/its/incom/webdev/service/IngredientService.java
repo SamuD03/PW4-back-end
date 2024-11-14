@@ -14,7 +14,6 @@ import jakarta.ws.rs.NotFoundException;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
 
 @ApplicationScoped
 public class IngredientService {

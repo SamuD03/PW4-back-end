@@ -1,4 +1,18 @@
 use lavie;
+-- Insert mock data into the ingredient table
+INSERT INTO ingredient (name)
+VALUES ('Farina'),
+       ('Zucchero'),
+       ('Burro'),
+       ('Uova'),
+       ('Cioccolato fondente'),
+       ('Latte'),
+       ('Panna montata'),
+       ('Vaniglia'),
+       ('Fragole'),
+       ('Lievito per dolci');
+
+
 INSERT INTO product (productName, description, quantity, price, category)
 VALUES ('Saint Honorè', 'Realizzata secondo il metodo francese: base di sfoglia caramellata farcita a piacere con crema alla vaniglia, al pistacchio o al cioccolato, choux caramellati, frutta fresca e una elegante decorazione di panna montata.', 5, 25.00, 'Torte'),
        ('Venere Nera', 'Mousse al cioccolato fondente con fogli croccanti di cioccolato e gelatina al frutto di bosco.', 8, 22.00, 'Torte'),

@@ -1,13 +1,11 @@
 package its.incom.webdev.rest;
 
 import its.incom.webdev.persistence.model.User;
-import its.incom.webdev.persistence.repository.UserRepository;
 import its.incom.webdev.rest.model.CreateUserResponse;
 import its.incom.webdev.rest.model.UserStatusRequest;
 import its.incom.webdev.service.AuthenticationService;
 import its.incom.webdev.service.SessionService;
 import its.incom.webdev.service.UserService;
-import its.incom.webdev.service.exception.WrongUsernameOrPasswordException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.*;
@@ -15,7 +13,6 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.sql.SQLException;
 import java.util.Optional;
 
 
@@ -29,8 +26,6 @@ public class UserResource {
     @Inject
     private UserStatusRequest userStatusRequest;
 
-    @Inject
-    private UserRepository userRepository;
 
     private final AuthenticationService authenticationService;
     private final UserService userService;
@@ -61,7 +56,7 @@ public class UserResource {
             }
 
             // fetch user information from the database
-            Optional<User> optionalUser = userRepository.findById(userId);
+            Optional<User> optionalUser = userService.findById(userId);
             if (optionalUser.isEmpty()) {
                 return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
             }
@@ -139,7 +134,7 @@ public class UserResource {
             }
 
             // delete the user
-            boolean deleted = userRepository.deleteUserById(userIdToDelete);
+            boolean deleted = userService.deleteUserById(userIdToDelete);
             if (deleted) {
                 return Response.ok("User deleted successfully.").build();
             } else {
@@ -176,7 +171,7 @@ public class UserResource {
                 return Response.status(Response.Status.FORBIDDEN).entity("Access denied. Admins only.").build();
             }
 
-            Optional<User> optionalUser = userRepository.findById(userIdToUpdate);
+            Optional<User> optionalUser = userService.findById(userIdToUpdate);
             if (optionalUser.isEmpty()) {
                 return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
             }
@@ -191,7 +186,7 @@ public class UserResource {
                 user.setVerified(userStatusRequest.isVerified());
             }
 
-            boolean updated = userRepository.updateUser(user);
+            boolean updated = userService.updateUser(user);
             if (updated) {
                 return Response.ok("User status updated successfully.").build();
             } else {
@@ -211,7 +206,7 @@ public class UserResource {
     public Response getUserProfileById(@PathParam("id") int userId) {
         try {
             // fetch user information from the database
-            Optional<User> optionalUser = userRepository.findById(userId);
+            Optional<User> optionalUser = userService.findById(userId);
             if (optionalUser.isEmpty()) {
                 return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
             }
