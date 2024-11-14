@@ -51,25 +51,28 @@ public class NotificationService {
         // loop through orders and find those with a pickup time within the next 24 hours
         for (Order order : allOrders) {
             if (order.getDateTime() != null && order.getDateTime().isAfter(now) && order.getDateTime().isBefore(timeLimit)) {
-                // extract the buyer ID from the order
-                int buyerId = order.getBuyerId(); // Adjust this getter if needed
+                // check if the order status is not "cancelled"
+                if (!"cancelled".equalsIgnoreCase(order.getStatus())) {
+                    // extract the buyer ID from the order
+                    int buyerId = order.getBuyerId(); // Adjust this getter if needed
 
-                // find the user in MySQL using the buyer ID
-                Optional<User> optionalUser = userRepository.findById(buyerId);
-                if (optionalUser.isPresent()) {
-                    User user = optionalUser.get();
+                    // find the user in MySQL using the buyer ID
+                    Optional<User> optionalUser = userRepository.findById(buyerId);
+                    if (optionalUser.isPresent()) {
+                        User user = optionalUser.get();
 
-                    // check if the user has notifications enabled
-                    if (user.isNotification()) {
-                        String userName = user.getName() + " " + user.getSurname();
+                        // check if the user has notifications enabled
+                        if (user.isNotification()) {
+                            String userName = user.getName() + " " + user.getSurname();
 
-                        // call the method to send the email
-                        sendPickupReminderEmail(user.getEmail(), order.getId().toString(), order.getDateTime(), userName);
+                            // call the method to send the email
+                            sendPickupReminderEmail(user.getEmail(), order.getId().toString(), order.getDateTime(), userName);
+                        } else {
+                            System.out.println("User with ID: " + buyerId + " has notifications disabled.");
+                        }
                     } else {
-                        System.out.println("User with ID: " + buyerId + " has notifications disabled.");
+                        System.out.println("User not found in MySQL with ID: " + buyerId);
                     }
-                } else {
-                    System.out.println("User not found in MySQL with ID: " + buyerId);
                 }
             }
         }

@@ -133,9 +133,12 @@ public class OrderRepository {
         LocalDateTime endTime = pickupTime.plusMinutes(9);
         // Log per vedere i valori passati al filtro
         Document existingOrder = ordersCollection.find(
-                new Document("$or", List.of(
-                        new Document("pickup", new Document("$lt", endTime.toString()).append("$gte", pickupTime.toString())),
-                        new Document("pickup", new Document("$lt", endTime.toString()).append("$gte", pickupTime.minusMinutes(9).toString()))
+                new Document("$and", List.of(
+                        new Document("$or", List.of(
+                                new Document("pickup", new Document("$lt", endTime.toString()).append("$gte", pickupTime.toString())),
+                                new Document("pickup", new Document("$lt", endTime.toString()).append("$gte", pickupTime.minusMinutes(9).toString()))
+                        )),
+                        new Document("status", new Document("$ne", "cancelled"))
                 ))
         ).first();
         return existingOrder != null;
