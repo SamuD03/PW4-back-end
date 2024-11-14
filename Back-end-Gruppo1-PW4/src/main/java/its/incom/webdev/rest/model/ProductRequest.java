@@ -1,9 +1,7 @@
 package its.incom.webdev.rest.model;
 
-import its.incom.webdev.persistence.model.Product;
-import its.incom.webdev.persistence.model.Ingredient;
 import its.incom.webdev.persistence.repository.IngredientRepository;
-import java.util.HashSet;
+
 import java.util.Set;
 
 public class ProductRequest {
@@ -17,31 +15,7 @@ public class ProductRequest {
 
     private IngredientRepository ingredientRepository;
 
-    // Constructor to inject IngredientRepository
-    public ProductRequest(IngredientRepository ingredientRepository) {
-        this.ingredientRepository = ingredientRepository;
-    }
     public ProductRequest(){}
-
-    public Product toProduct() {
-        Set<Ingredient> ingredientEntities = new HashSet<>();
-        for (String ingredientName : ingredients) {
-            Ingredient ingredient = ingredientRepository.findByName(ingredientName);
-            if (ingredient != null) {
-                ingredientEntities.add(ingredient);
-            }
-        }
-
-        Product product = new Product();
-        product.setProductName(productName);
-        product.setDescription(description);
-        product.setQuantity(quantity);
-        product.setPrice(price);
-        product.setCategory(category);
-        product.setIngredients(ingredientEntities);
-
-        return product;
-    }
 
     public Set<String> getIngredients() {
         return ingredients;

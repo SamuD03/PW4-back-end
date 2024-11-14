@@ -52,14 +52,6 @@ CREATE TABLE IF NOT EXISTS product_ingredient
     FOREIGN KEY (ingredient_id) REFERENCES ingredient (id)
 );
 
--- Create the stock table
-CREATE TABLE IF NOT EXISTS stock
-(
-    id         INT PRIMARY KEY AUTO_INCREMENT,
-    product_id INT NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES product (id)
-);
-
 -- Create the verification_token table
 CREATE TABLE IF NOT EXISTS verification_token
 (

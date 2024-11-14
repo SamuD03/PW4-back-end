@@ -35,19 +35,6 @@ public class SessionRepository {
     }
 
 
-    // Metodo per eliminare una sessione dal database
-    public void deleteSessione(String sessionId) throws SQLException {
-        try (Connection connection = database.getConnection()) {
-            String query = "DELETE FROM session WHERE id = ?";
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
-                statement.setString(1, sessionId);
-                int affectedRows = statement.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Cancellazione della sessione fallita, nessuna riga eliminata.");
-                }
-            }
-        }
-    }
 
     // Metodo per ottenere una sessione dal database tramite il suo ID
     public Session getSessionById(String sessionId) throws SQLException {
@@ -113,21 +100,6 @@ public class SessionRepository {
             throw new RuntimeException("Error checking session existence", e);
         }
         return false;
-    }
-
-    public String findEmailBySessionId(String sessionId) throws SQLException {
-        try (Connection connection = database.getConnection()) {
-            String query = "SELECT email FROM session WHERE id = ?";
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
-                statement.setString(1, sessionId); // Imposta il sessionId come parametro
-                try (ResultSet resultSet = statement.executeQuery()) {
-                    if (resultSet.next()) {
-                        return resultSet.getString("email"); // Ritorna l'email associata
-                    }
-                }
-            }
-        }
-        return null; // Ritorna null se nessuna sessione è trovata
     }
 
     public void deleteSession(String sessionId) {
